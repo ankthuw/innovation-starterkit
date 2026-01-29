@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { streamClaudeMessage, ClaudeMessage } from "@/lib/claude";
 import { getSession } from "@/lib/session";
+import { buildIdeationContext } from "@/lib/prompts-clean";
 import type { ChatMessage, BusinessIdea, IdeationSubStep } from "@/types/innovation";
 
 const IDEATION_ASSISTANT_PROMPT = `You are an expert innovation consultant and business strategist assisting users with their business ideas throughout the ideation process.
@@ -25,15 +26,63 @@ Your role varies by the current sub-step:
 - Help with go-to-market strategy and next steps
 - Provide risk assessment and mitigation suggestions
 
+## Understanding User Context
+
+When there's a "Currently Viewing in Detail Panel" section above:
+- User is actively viewing that specific idea in the detail panel
+- When user says "this idea", "the current idea", "improve this", "help me improve", or similar, they ARE referring to the VIEWING idea
+- Focus your response on that specific viewing idea
+- DO NOT generate new ideas when user asks to improve "this idea" - modify the viewing idea instead
+- ONLY generate new ideas when user explicitly asks: "generate new ideas", "create more ideas", "give me alternatives", etc.
+
 ## Scoring System Context
 
-Ideas are evaluated across key metrics:
-- **Market Fit (0-100)**: How well the solution matches market needs
-- **Feasibility (0-100)**: How feasible with current technology and resources
-- **Innovation (0-100)**: Level of innovation and novelty
-- **Uniqueness (0-100)**: How different from existing solutions
-- **ROI**: high, medium, or low
-- **Risk**: high, medium, or low
+When user asks to score, evaluate, or improve scores, use these EXACT criteria (same as the evaluation API):
+
+### 1. uniqueness (0-100)
+**What to assess**: How truly novel is this approach?
+- Compare against existing solutions mentioned in the challenge
+- Consider technology combinations, business models, target markets
+- Score >80: Highly unique, novel approach with clear differentiation
+- Score 60-79: Somewhat unique, some differentiation but not groundbreaking
+- Score <60: Common approach, incremental improvement, or crowded market
+
+### 2. feasibility (0-100)
+**What to assess**: Implementation feasibility with current technology
+- Is the technology proven or experimental?
+- Are the resource requirements realistic?
+- What's the technical complexity and timeline?
+- Score >80: Highly feasible with proven tech
+- Score 60-79: Moderately feasible, some challenges
+- Score <60: Low feasibility, high technical risk
+
+### 3. marketFit (0-100)
+**What to assess**: Does this truly address a market need?
+- Is the problem real and urgent?
+- Do customers actually care about this solution?
+- Score >80: Strong market fit, urgent need
+- Score 60-79: Moderate market fit, some interest
+- Score <60: Weak market fit, solution in search of problem
+
+### 4. innovation (0-100)
+**What to assess**: How innovative is the approach?
+- Market creation (new market) = higher score (85-100)
+- Market improvement (better solution) = medium score (60-84)
+- Incremental change (minor improvement) = lower score (40-59)
+
+### 5. roi (high/medium/low)
+**What to assess**: Return on investment potential
+- **High**: Large addressable market ($10B+), scalable solution, strong margins
+- **Medium**: Moderate market ($1-10B), some scalability
+- **Low**: Small market (<$1B), limited scalability, low margins
+
+### 6. risk (high/medium/low)
+**What to assess**: Overall risk level (INVERTED - high score = low risk)
+- **High**: Proven technology, clear market, low execution complexity
+- **Medium**: Some risk factors (tech, market, or competition)
+- **Low**: Unproven approach, competitive market, or high complexity
+
+**IMPORTANT**: Be critical and conservative in scoring, not optimistic. These are the same criteria used by the evaluation system.
 
 ## Search Fields
 
@@ -61,12 +110,18 @@ IMPORTANT - Response Format:
           "reasoning": "Explanation"
         },
         "metrics": {
-          "marketFit": 85,
-          "feasibility": 75,
-          "innovation": 80,
-          "uniqueness": 70,
+          "uniqueness": <0-100>,
+          "feasibility": <0-100>,
+          "marketFit": <0-100>,
+          "innovation": <0-100>,
           "roi": "high|medium|low",
           "risk": "high|medium|low"
+        },
+        "evaluation": {
+          "strengths": ["strength 1", "strength 2", "strength 3"],
+          "weaknesses": ["weakness 1", "weakness 2", "weakness 3"],
+          "assumptions": ["assumption 1", "assumption 2"],
+          "criticalQuestions": ["question 1", "question 2"]
         }
       }
     ]
@@ -74,21 +129,40 @@ IMPORTANT - Response Format:
 }
 \`\`\`
 
+Note: The "metrics" and "evaluation" fields are OPTIONAL. Only include them when user asks to score, evaluate, or improve scores.
+
 CRITICAL: When updating ideas, you MUST include ALL required fields:
 - id, name, tagline, description, problemSolved (required)
 - searchFields with industries, technologies, reasoning (required)
-- metrics with marketFit, feasibility, innovation, uniqueness, roi, risk (required)
-- ALL metrics fields must be included (marketFit, feasibility, innovation, uniqueness, roi, risk)
+- metrics and evaluation (OPTIONAL - include based on these rules):
+  • DO NOT include metrics/evaluation when generating or refining ideas
+  • DO NOT include metrics/evaluation when modifying content (description, problem solved, etc.)
+  • INCLUDE metrics and evaluation ONLY when user explicitly asks to "score", "evaluate", "improve scores", or similar
+  • If an idea already has metrics and you're NOT asked to re-score, preserve its existing metrics (copy them to your response)
 
 CRITICAL RULES:
 - ONLY include the JSON block when user explicitly asks to UPDATE, MODIFY, or CHANGE an idea
 - When updating ONE idea: return ALL ideas in the session (the updated one + all other unchanged ideas)
+- **CRITICAL**: Maintain the EXACT SAME ORDER as the ideas were provided to you - do NOT reorder them
 - Other ideas' scores MUST remain unchanged - only modify the specific idea requested
 - The JSON block must be the LAST thing in your response - after all conversational text
 - Do NOT include the JSON block for general questions or explanations
-- When updating ideas to improve metrics (feasibility, uniqueness, etc.), provide specific improvements in the idea's content that justify the better score
-- ALL ideas in the array must include complete metrics (marketFit, feasibility, innovation, uniqueness, roi, risk)
+- When user asks to improve/increase scores: DO include the NEW improved metrics and evaluation in your response
 - Adjust your response style based on the current sub-step
+
+## Improving Ideas (When user asks "help me improve", "improve this idea", etc.)
+
+When user asks to improve an idea:
+1. First, provide CONVERSATIONAL guidance on how to improve it
+2. Focus on the viewing idea (when user says "this idea")
+3. Suggest specific improvements to content (description, problemSolved, etc.)
+4. Suggest improvements to metrics/evaluation if scores are low
+5. If you include a JSON update, ONLY modify the viewing idea - do NOT create new ideas
+6. Return ALL existing ideas in the JSON (the modified one + all others unchanged)
+
+Example:
+User: "help me improve this idea"
+You: "I can see your current idea focuses on X. Here are some suggestions... [detailed guidance]. Would you like me to update it with these improvements?" (then optionally include JSON with the improved viewing idea)
 
 Be:
 - Specific and data-driven
@@ -120,21 +194,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Build context from challenge and market analysis (if available)
-  const challengeSection = currentChallenge ? `
-Current Challenge:
-- Problem: ${currentChallenge.problem}
-- Target Audience: ${currentChallenge.targetAudience}
-- Industry: ${currentChallenge.industry || "Not specified"}
-` : "";
+  // Build rich context using buildIdeationContext (same as scoring API)
+  const challengeContext = currentChallenge ? buildIdeationContext(currentChallenge, currentMarketAnalysis) : "";
 
-  const marketSection = currentMarketAnalysis ? `
-Market Analysis:
-- TAM: ${currentMarketAnalysis.tam}
-- SAM: ${currentMarketAnalysis.sam}
-- SOM: ${currentMarketAnalysis.som}
-- Trends: ${currentMarketAnalysis.trends?.map((t: any) => t.name).join(", ") || "N/A"}
-- Opportunities: ${currentMarketAnalysis.opportunities?.slice(0, 3).join(", ") || "N/A"}
+  // Build detailed market section with competitors (missing from buildIdeationContext)
+  const marketDetailsSection = currentMarketAnalysis ? `
+Market Details:
+- Competitors: ${currentMarketAnalysis.competitors?.map((c: any) => c.name).join(", ") || "N/A"}
+- All Opportunities: ${currentMarketAnalysis.opportunities?.join("; ") || "N/A"}
+- Challenges: ${currentMarketAnalysis.challenges?.join("; ") || "N/A"}
 ` : "";
 
   const selectedIdeaSection = currentSelectedIdea ? `
@@ -143,22 +211,36 @@ Selected Idea: ${currentSelectedIdea.name}
 - Description: ${currentSelectedIdea.description || "N/A"}
 - Problem Solved: ${currentSelectedIdea.problemSolved || "N/A"}
 - Strategic Focus: ${currentSelectedIdea.searchFields?.technologies?.join(", ") || "N/A"}
-${currentSelectedIdea.metrics ? `- Metrics: Market Fit ${currentSelectedIdea.metrics.marketFit}%, Feasibility ${currentSelectedIdea.metrics.feasibility}%, Innovation ${currentSelectedIdea.metrics.innovation}%, ROI ${currentSelectedIdea.metrics.roi}` : "- Metrics: To be generated in appraisal phase"}
+${currentSelectedIdea.metrics ? `- Metrics: Uniqueness ${currentSelectedIdea.metrics.uniqueness}%, Feasibility ${currentSelectedIdea.metrics.feasibility}%, Innovation ${currentSelectedIdea.metrics.innovation}%, ROI ${currentSelectedIdea.metrics.roi}` : "- Metrics: To be generated in appraisal phase"}
 ` : "";
 
   const viewingIdeaSection = viewingIdea ? `
 Currently Viewing in Detail Panel: ${viewingIdea.name}
+- ID: ${viewingIdea.id}
 - Tagline: ${viewingIdea.tagline}
 - Description: ${viewingIdea.description || "N/A"}
 - Problem Solved: ${viewingIdea.problemSolved || "N/A"}
 - Strategic Focus: ${viewingIdea.searchFields?.technologies?.join(", ") || "N/A"}
 ${viewingIdea.metrics ? `- Metrics: Uniqueness ${viewingIdea.metrics.uniqueness}%, Feasibility ${viewingIdea.metrics.feasibility}%, Innovation ${viewingIdea.metrics.innovation}%, ROI ${viewingIdea.metrics.roi}` : "- Metrics: To be generated"}
+${viewingIdea.brief ? `- Detailed Brief: ${viewingIdea.brief}` : ""}
+${viewingIdea.evaluation ? `- Evaluation:
+  - Strengths: ${viewingIdea.evaluation.strengths?.join("; ") || "N/A"}
+  - Weaknesses: ${viewingIdea.evaluation.weaknesses?.join("; ") || "N/A"}
+  - Assumptions: ${viewingIdea.evaluation.assumptions?.join("; ") || "N/A"}
+  - Critical Questions: ${viewingIdea.evaluation.criticalQuestions?.join("; ") || "N/A"}` : ""}
+
+**IMPORTANT**: When user says "this idea", "the current idea", "improve this", or similar, they ARE referring to the "${viewingIdea.name}" idea that is currently being viewed above.
 ` : "";
 
+  // Build rich ideas summary with full details (same as scoring API)
   const ideasSummary = currentIdeas ? JSON.stringify(currentIdeas.map((i: BusinessIdea) => ({
     id: i.id,
     name: i.name,
     tagline: i.tagline,
+    description: i.description,
+    problemSolved: i.problemSolved,
+    searchFields: i.searchFields,
+    brief: i.brief,
     metrics: i.metrics
   }))) : "None generated yet";
 
@@ -176,7 +258,9 @@ ${viewingIdea.metrics ? `- Metrics: Uniqueness ${viewingIdea.metrics.uniqueness}
       break;
   }
 
-  const context = `${challengeSection}${marketSection}${selectedIdeaSection}${viewingIdeaSection}
+  const context = `${challengeContext}
+
+${marketDetailsSection}${selectedIdeaSection}${viewingIdeaSection}
 
 Current Ideas: ${ideasSummary}
 
