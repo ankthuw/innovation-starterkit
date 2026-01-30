@@ -490,14 +490,22 @@ Browse through the ideas in the left panel, click to view details, and click "Ge
                 }
               });
 
-              // Preserve original order by mapping through existing ideas and updating in place
+              // Update existing ideas and preserve their order
               const mergedIdeas = ideas.map((existingIdea) => {
                 const updated = updatedIdeasMap.get(existingIdea.id);
                 return updated || existingIdea;
               });
 
-              setIdeas(mergedIdeas);
-              saveIdeas(mergedIdeas);
+              // Add new ideas that weren't in the original array
+              const newIdeas = data.data.ideas.filter((updatedIdea: BusinessIdea) =>
+                !ideas.find((existingIdea) => existingIdea.id === updatedIdea.id)
+              );
+
+              // Combine: existing ideas (updated) + new ideas
+              const finalIdeas = [...mergedIdeas, ...newIdeas];
+
+              setIdeas(finalIdeas);
+              saveIdeas(finalIdeas);
             }
           },
 

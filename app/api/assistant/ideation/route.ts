@@ -99,7 +99,7 @@ IMPORTANT - Response Format:
   "IDEAS_UPDATE": {
     "ideas": [
       {
-        "id": "...",
+        "id": "unique-id-or-existing-id",
         "name": "...",
         "tagline": "...",
         "description": "...",
@@ -109,6 +109,7 @@ IMPORTANT - Response Format:
           "technologies": ["ai-edge", "cloud"],
           "reasoning": "Explanation"
         },
+        "brief": "4-6 sentence detailed explanation including core concept, problem addressed, differentiators, target customers, implementation considerations, and market opportunity",
         "metrics": {
           "uniqueness": <0-100>,
           "feasibility": <0-100>,
@@ -129,7 +130,9 @@ IMPORTANT - Response Format:
 }
 \`\`\`
 
-Note: The "metrics" and "evaluation" fields are OPTIONAL. Only include them when user asks to score, evaluate, or improve scores.
+Note:
+- The "metrics" and "evaluation" fields are OPTIONAL. Only include them when user asks to score, evaluate, or improve scores.
+- The "brief" field is REQUIRED for new ideas, optional when updating existing ideas (preserve it if it exists)
 
 CRITICAL: When updating ideas, you MUST include ALL required fields:
 - id, name, tagline, description, problemSolved (required)
@@ -141,14 +144,48 @@ CRITICAL: When updating ideas, you MUST include ALL required fields:
   • If an idea already has metrics and you're NOT asked to re-score, preserve its existing metrics (copy them to your response)
 
 CRITICAL RULES:
-- ONLY include the JSON block when user explicitly asks to UPDATE, MODIFY, or CHANGE an idea
-- When updating ONE idea: return ALL ideas in the session (the updated one + all other unchanged ideas)
+- Include the JSON block when user asks to: UPDATE, MODIFY, CHANGE, CREATE, GENERATE, ADD, or REPLACE ideas
+- When user asks to generate/create/add new ideas:
+  - Create NEW ideas with unique IDs (use format: "idea-{timestamp}-{random}")
+  - Include the NEW ideas PLUS all existing ideas in your response
+  - New ideas MUST include the "brief" field
+  - New ideas should NOT include "metrics" or "evaluation" (they'll be scored separately)
+- When updating existing ideas:
+  - Use the EXISTING id from the idea being updated
+  - Return ALL ideas in the session (the updated one + all other unchanged ideas)
+  - Preserve the "brief" field if it exists
+  - Preserve "metrics" and "evaluation" if not explicitly asked to re-score
 - **CRITICAL**: Maintain the EXACT SAME ORDER as the ideas were provided to you - do NOT reorder them
 - Other ideas' scores MUST remain unchanged - only modify the specific idea requested
 - The JSON block must be the LAST thing in your response - after all conversational text
 - Do NOT include the JSON block for general questions or explanations
 - When user asks to improve/increase scores: DO include the NEW improved metrics and evaluation in your response
 - Adjust your response style based on the current sub-step
+
+## Generating New Ideas (When user asks "generate new ideas", "create more ideas", "add 3 ideas", etc.)
+
+When user asks to generate/create/add new ideas:
+1. Create the requested number of new ideas with unique IDs
+2. Each new idea MUST include:
+   - id: "idea-{timestamp}-{random-number}" (e.g., "idea-1704067200-1")
+   - name, tagline, description, problemSolved
+   - searchFields with industries, technologies, reasoning
+   - brief: 4-6 sentence detailed explanation
+3. Each new idea MUST NOT include metrics or evaluation (they'll be scored separately)
+4. Return ALL ideas: the NEW ideas + all EXISTING ideas
+5. Maintain the original order of existing ideas (append new ideas at the end)
+6. Provide conversational context before the JSON explaining what you've created
+
+Example:
+User: "generate 3 new ideas"
+You: "I'll generate 3 new innovative ideas for you based on the challenge... [brief description of each idea]. Here are the details:" (then include JSON with 3 new ideas + all existing ideas)
+
+## Replacing Ideas (When user asks "replace this idea", "replace idea X with Y", etc.)
+
+When user asks to replace an idea:
+1. Create the NEW replacement idea with a unique ID (different from the one being replaced)
+2. Return ALL ideas: the NEW replacement idea + all other EXISTING ideas (excluding the replaced one)
+3. Clearly state which idea is being replaced and why
 
 ## Improving Ideas (When user asks "help me improve", "improve this idea", etc.)
 
@@ -302,7 +339,7 @@ ${subStepContext}
         let inJsonBlock = false;
         let bufferedContent = ""; // Buffer content until we know if there's an update
 
-        for await (const chunk of streamClaudeMessage(messages, IDEATION_ASSISTANT_PROMPT)) {
+        for await (const chunk of streamClaudeMessage(messages, IDEATION_ASSISTANT_PROMPT, 16384)) {
           fullResponse += chunk;
 
           // Check if we need to hide any content (inside a JSON block with IDEAS_UPDATE)
