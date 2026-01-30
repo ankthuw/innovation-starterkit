@@ -144,6 +144,7 @@ CRITICAL: When updating ideas, you MUST include ALL required fields:
   • If an idea already has metrics and you're NOT asked to re-score, preserve its existing metrics (copy them to your response)
 
 CRITICAL RULES:
+- **ALWAYS return a COMPLETE list of ideas** in your JSON response - never just the changed ones
 - Include the JSON block when user asks to: UPDATE, MODIFY, CHANGE, CREATE, GENERATE, ADD, or REPLACE ideas
 - When user asks to generate/create/add new ideas:
   - Create NEW ideas with unique IDs (use format: "idea-{timestamp}-{random}")
@@ -155,6 +156,9 @@ CRITICAL RULES:
   - Return ALL ideas in the session (the updated one + all other unchanged ideas)
   - Preserve the "brief" field if it exists
   - Preserve "metrics" and "evaluation" if not explicitly asked to re-score
+- When replacing an idea:
+  - Return ALL ideas EXCEPT the one being replaced (the new idea + all other existing ideas)
+  - The replaced idea should NOT appear in your response
 - **CRITICAL**: Maintain the EXACT SAME ORDER as the ideas were provided to you - do NOT reorder them
 - Other ideas' scores MUST remain unchanged - only modify the specific idea requested
 - The JSON block must be the LAST thing in your response - after all conversational text
@@ -184,8 +188,13 @@ You: "I'll generate 3 new innovative ideas for you based on the challenge... [br
 
 When user asks to replace an idea:
 1. Create the NEW replacement idea with a unique ID (different from the one being replaced)
-2. Return ALL ideas: the NEW replacement idea + all other EXISTING ideas (excluding the replaced one)
-3. Clearly state which idea is being replaced and why
+2. Return ALL ideas in your JSON response: the NEW replacement idea + all other EXISTING ideas (excluding the replaced one)
+3. **CRITICAL**: The replaced idea should NOT appear in your JSON response
+4. Clearly state in your conversational response which idea is being replaced and why
+
+Example:
+User: "replace 'AI Inventory Manager' with a better idea"
+You: "I'll replace 'AI Inventory Manager' with a more innovative approach called 'Smart Inventory Optimization' that uses predictive analytics... [explain why it's better]. Here's the updated list:" (then include JSON with the new idea + all other ideas, NOT including the replaced one)
 
 ## Improving Ideas (When user asks "help me improve", "improve this idea", etc.)
 

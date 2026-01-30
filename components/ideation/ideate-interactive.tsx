@@ -470,42 +470,42 @@ Browse through the ideas in the left panel, click to view details, and click "Ge
               )
             );
             if (data.type === "update" && data.data?.ideas) {
-              // Create a map of updated ideas for quick lookup
-              const updatedIdeasMap = new Map<string, BusinessIdea>();
-              data.data.ideas.forEach((updatedIdea: BusinessIdea) => {
+              // Process each idea from the assistant's response
+              const processedIdeas = data.data.ideas.map((updatedIdea: BusinessIdea) => {
                 const existingIdea = ideas.find((i) => i.id === updatedIdea.id);
-                // If updated idea has no metrics but existing one does, preserve existing metrics
-                if (!updatedIdea.metrics && existingIdea?.metrics) {
-                  updatedIdeasMap.set(updatedIdea.id, {
+
+                // If this is an update to an existing idea
+                if (existingIdea) {
+                  // If updated idea has no metrics but existing one does, preserve existing metrics
+                  if (!updatedIdea.metrics && existingIdea.metrics) {
+                    return {
+                      ...updatedIdea,
+                      metrics: existingIdea.metrics,
+                      evaluation: existingIdea.evaluation,
+                      financialPreview: undefined,
+                    };
+                  }
+                  // Preserve financialPreview flag
+                  return {
                     ...updatedIdea,
-                    metrics: existingIdea.metrics,
-                    evaluation: existingIdea.evaluation,
                     financialPreview: undefined,
-                  });
-                } else {
-                  updatedIdeasMap.set(updatedIdea.id, {
-                    ...updatedIdea,
-                    financialPreview: undefined,
-                  });
+                  };
                 }
+
+                // This is a new idea - just return it as-is
+                return {
+                  ...updatedIdea,
+                  financialPreview: undefined,
+                };
               });
 
-              // Update existing ideas and preserve their order
-              const mergedIdeas = ideas.map((existingIdea) => {
-                const updated = updatedIdeasMap.get(existingIdea.id);
-                return updated || existingIdea;
-              });
-
-              // Add new ideas that weren't in the original array
-              const newIdeas = data.data.ideas.filter((updatedIdea: BusinessIdea) =>
-                !ideas.find((existingIdea) => existingIdea.id === updatedIdea.id)
-              );
-
-              // Combine: existing ideas (updated) + new ideas
-              const finalIdeas = [...mergedIdeas, ...newIdeas];
-
-              setIdeas(finalIdeas);
-              saveIdeas(finalIdeas);
+              // Trust the assistant's response completely - use the returned list
+              // This allows for:
+              // - Adding new ideas (assistant returns more ideas)
+              // - Replacing/removing ideas (assistant returns fewer ideas)
+              // - Updating ideas (assistant returns modified versions)
+              setIdeas(processedIdeas);
+              saveIdeas(processedIdeas);
             }
           },
 
