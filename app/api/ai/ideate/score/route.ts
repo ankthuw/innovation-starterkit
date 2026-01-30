@@ -80,10 +80,11 @@ Please evaluate these ideas critically and provide objective scores.`;
     const evaluationResponse = await sendClaudeMessage<EvaluatedIdea[]>(
       evaluationMessages,
       IDEATION_EVALUATION_PROMPT,
-      8000
+      16384
     );
 
     if (!evaluationResponse.success) {
+      console.error("[Score API] Evaluation failed:", evaluationResponse.error);
       return NextResponse.json(
         {
           error: evaluationResponse.error || "Failed to score ideas",

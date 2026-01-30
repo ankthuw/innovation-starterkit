@@ -92,7 +92,10 @@ Ideas are tagged with relevant search fields:
 
 IMPORTANT - Response Format:
 - For general questions: Respond naturally with conversational text only
-- For update/modification requests: Respond with conversational text FIRST, then include a JSON code block at the VERY END with this EXACT format:
+- For update/modification/creation/replacement requests: Respond with conversational text FIRST, then include a JSON code block at the VERY END with this EXACT format
+- **CRITICAL**: ALWAYS complete the JSON block - never leave it incomplete
+- **CRITICAL**: The JSON block must be the LAST thing in your response - nothing after it
+- **CRITICAL**: Always close the JSON block properly after all the ideas
 
 \`\`\`json
 {
@@ -145,19 +148,23 @@ CRITICAL: When updating ideas, you MUST include ALL required fields:
 
 CRITICAL RULES:
 - **ALWAYS return a COMPLETE list of ideas** in your JSON response - never just the changed ones
+- **PRESERVE ideas exactly as-is** when copying them - do NOT modify, rewrite, or regenerate ideas you're not explicitly changing
 - Include the JSON block when user asks to: UPDATE, MODIFY, CHANGE, CREATE, GENERATE, ADD, or REPLACE ideas
 - When user asks to generate/create/add new ideas:
   - Create NEW ideas with unique IDs (use format: "idea-{timestamp}-{random}")
   - Include the NEW ideas PLUS all existing ideas in your response
+  - Copy existing ideas EXACTLY as they are - do not modify them
   - New ideas MUST include the "brief" field
   - New ideas should NOT include "metrics" or "evaluation" (they'll be scored separately)
 - When updating existing ideas:
   - Use the EXISTING id from the idea being updated
   - Return ALL ideas in the session (the updated one + all other unchanged ideas)
+  - Copy unchanged ideas EXACTLY as they appear in the input - do not modify them
   - Preserve the "brief" field if it exists
   - Preserve "metrics" and "evaluation" if not explicitly asked to re-score
 - When replacing an idea:
   - Return ALL ideas EXCEPT the one being replaced (the new idea + all other existing ideas)
+  - Copy other ideas EXACTLY as they appear in the input - do not modify them
   - The replaced idea should NOT appear in your response
 - **CRITICAL**: Maintain the EXACT SAME ORDER as the ideas were provided to you - do NOT reorder them
 - Other ideas' scores MUST remain unchanged - only modify the specific idea requested
@@ -189,12 +196,15 @@ You: "I'll generate 3 new innovative ideas for you based on the challenge... [br
 When user asks to replace an idea:
 1. Create the NEW replacement idea with a unique ID (different from the one being replaced)
 2. Return ALL ideas in your JSON response: the NEW replacement idea + all other EXISTING ideas (excluding the replaced one)
-3. **CRITICAL**: The replaced idea should NOT appear in your JSON response
-4. Clearly state in your conversational response which idea is being replaced and why
+3. **CRITICAL**: Copy all other existing ideas EXACTLY as they are - do NOT modify, rewrite, or regenerate them
+4. **CRITICAL**: The replaced idea should NOT appear in your JSON response
+5. Clearly state in your conversational response which idea is being replaced and why
 
 Example:
 User: "replace 'AI Inventory Manager' with a better idea"
-You: "I'll replace 'AI Inventory Manager' with a more innovative approach called 'Smart Inventory Optimization' that uses predictive analytics... [explain why it's better]. Here's the updated list:" (then include JSON with the new idea + all other ideas, NOT including the replaced one)
+You: "I'll replace 'AI Inventory Manager' with a more innovative approach called 'Smart Inventory Optimization' that uses predictive analytics... [explain why it's better]. Here's the updated list:" (then include JSON with the new idea + all other ideas copied exactly as-is, NOT including the replaced one)
+
+**IMPORTANT**: When copying other ideas, copy ALL fields exactly including name, tagline, description, problemSolved, searchFields, brief, metrics, evaluation. Do not change a single character of ideas you're not replacing.
 
 ## Improving Ideas (When user asks "help me improve", "improve this idea", etc.)
 
@@ -346,9 +356,9 @@ ${subStepContext}
         let hasIdeasUpdate = false;
         let lastStreamedPosition = 0;
         let inJsonBlock = false;
-        let bufferedContent = ""; // Buffer content until we know if there's an update
+        let bufferedContent = "";
 
-        for await (const chunk of streamClaudeMessage(messages, IDEATION_ASSISTANT_PROMPT, 16384)) {
+        for await (const chunk of streamClaudeMessage(messages, IDEATION_ASSISTANT_PROMPT, 32768)) {
           fullResponse += chunk;
 
           // Check if we need to hide any content (inside a JSON block with IDEAS_UPDATE)
@@ -362,11 +372,11 @@ ${subStepContext}
 
             if (!inJsonBlock) {
               // First time detecting the JSON block - DO NOT stream content before it
-              // This prevents "Here is the updated data..." from showing
+              // This prevents opening ```json and { from showing
               lastStreamedPosition = jsonResponseStart;
               inJsonBlock = true;
               hasIdeasUpdate = true;
-              bufferedContent = ""; // Clear buffered content
+              bufferedContent = ""; // Clear any buffered content
             }
 
             if (jsonResponseEnd !== -1) {
@@ -395,15 +405,11 @@ ${subStepContext}
 
               // Stream buffered content if response is getting long and no JSON block found
               // This prevents holding back regular conversational responses too long
-              if (bufferedContent.length > 500 && !fullResponse.includes("```")) {
+              if (bufferedContent.length > 300 && !fullResponse.includes("```")) {
                 safeEnqueue(`data: ${JSON.stringify({ chunk: bufferedContent })}\n\n`);
                 bufferedContent = "";
               }
             }
-          }
-
-          if (fullResponse.includes("IDEAS_UPDATE")) {
-            hasIdeasUpdate = true;
           }
         }
 
@@ -412,10 +418,9 @@ ${subStepContext}
           safeEnqueue(`data: ${JSON.stringify({ chunk: bufferedContent })}\n\n`);
         }
 
-        // At the end, check if there's an IDEAS_UPDATE to extract
+        // After streaming completes, check for IDEAS_UPDATE
         if (hasIdeasUpdate) {
-          // Try to extract JSON from the response
-          let jsonMatch = fullResponse.match(/```(?:json)?\s*([\s\S]*?)```/);
+          let jsonMatch = fullResponse.match(/```(?:json)?\s*([\s\S]*?)\n```/);
           let jsonStr = jsonMatch ? jsonMatch[1] : null;
 
           if (jsonStr) {
@@ -423,27 +428,31 @@ ${subStepContext}
               const parsed = JSON.parse(jsonStr.trim());
 
               if (parsed.IDEAS_UPDATE && parsed.IDEAS_UPDATE.ideas && Array.isArray(parsed.IDEAS_UPDATE.ideas)) {
-                safeEnqueue(`data: ${JSON.stringify({ done: true, type: "update", data: parsed.IDEAS_UPDATE })}\n\n`);
-                controller.close();
+                if (!controllerClosed) {
+                  safeEnqueue(`data: ${JSON.stringify({ done: true, type: "update", data: parsed.IDEAS_UPDATE })}\n\n`);
+                  controller.close();
+                  controllerClosed = true;
+                }
                 return;
               }
             } catch (e) {
               console.error("Failed to parse IDEAS_UPDATE JSON:", e);
+              console.error("JSON string length:", jsonStr?.length);
+              console.error("First 500 chars:", jsonStr?.substring(0, 500));
             }
           }
         }
 
         // If no valid update, send as text response
-        safeEnqueue(`data: ${JSON.stringify({ done: true, type: "text", data: fullResponse.trim() })}\n\n`);
-
         if (!controllerClosed) {
+          safeEnqueue(`data: ${JSON.stringify({ done: true, type: "text", data: fullResponse.trim() })}\n\n`);
           controller.close();
           controllerClosed = true;
         }
       } catch (error) {
         console.error("Stream error:", error);
-        safeEnqueue(`data: ${JSON.stringify({ done: true, type: "error", data: "Failed to process request" })}\n\n`);
         if (!controllerClosed) {
+          safeEnqueue(`data: ${JSON.stringify({ done: true, type: "error", data: "Failed to process request" })}\n\n`);
           controller.error(error);
           controllerClosed = true;
         }

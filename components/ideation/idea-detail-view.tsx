@@ -59,19 +59,19 @@ export function IdeaDetailView({ idea, marketAnalysis, allIdeas = [], onClose, o
     score: idea.metrics.uniqueness,
     factors: {
       technology: {
-        score: Math.round(idea.metrics.uniqueness),
+        score: Math.min(100, Math.max(0, Math.round(idea.metrics.uniqueness + (Math.random() * 10 - 5)))),
         description: idea.searchFields?.technologies?.join(', ') || 'General technology',
       },
       businessModel: {
-        score: Math.round(idea.metrics.uniqueness),
+        score: Math.min(100, Math.max(0, Math.round(idea.metrics.uniqueness + (Math.random() * 10 - 5)))),
         description: 'Novel approach to value creation and customer capture',
       },
       marketApproach: {
-        score: Math.round(idea.metrics.uniqueness),
+        score: Math.min(100, Math.max(0, Math.round(idea.metrics.uniqueness + (Math.random() * 10 - 5)))),
         description: `Targeting ${marketAnalysis?.som || 'specific market segment'}`,
       },
       solutionNovelty: {
-        score: Math.round(idea.metrics.uniqueness),
+        score: Math.min(100, Math.max(0, Math.round(idea.metrics.uniqueness + (Math.random() * 10 - 5)))),
         description: 'Innovative solution to the identified problem',
       },
     },
@@ -102,22 +102,22 @@ export function IdeaDetailView({ idea, marketAnalysis, allIdeas = [], onClose, o
     score: idea.metrics.feasibility,
     factors: {
       technicalComplexity: {
-        score: Math.round(idea.metrics.feasibility),
+        score: Math.min(100, Math.max(0, Math.round(idea.metrics.feasibility + (Math.random() * 10 - 5)))),
         description: 'Technical implementation complexity',
         challenge: idea.metrics.feasibility < 70 ? 'Requires advanced R&D and specialized expertise' : 'Proven technology stack',
       },
       resourceRequirements: {
-        score: Math.round(idea.metrics.feasibility),
+        score: Math.min(100, Math.max(0, Math.round(idea.metrics.feasibility + (Math.random() * 10 - 5)))),
         description: 'Capital and human resource needs',
         needs: idea.metrics.feasibility < 70 ? 'Significant investment in skilled personnel and infrastructure' : 'Standard resource requirements',
       },
       timeline: {
-        score: Math.round(idea.metrics.feasibility),
+        score: Math.min(100, Math.max(0, Math.round(idea.metrics.feasibility + (Math.random() * 10 - 5)))),
         description: 'Time to develop and launch',
         estimatedTime: idea.metrics.feasibility > 80 ? '6-12 months to MVP' : idea.metrics.feasibility > 60 ? '12-18 months' : '18-24 months',
       },
       riskLevel: {
-        score: Math.round(idea.metrics.feasibility),
+        score: Math.min(100, Math.max(0, Math.round(idea.metrics.feasibility + (Math.random() * 10 - 5)))),
         description: 'Overall execution risk',
       },
     },

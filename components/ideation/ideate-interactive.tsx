@@ -86,17 +86,28 @@ export function InteractiveIdeation({
   useEffect(() => {
     if (selectedIdeaForView && ideas.length > 0) {
       const updatedIdea = ideas.find((i) => i.id === selectedIdeaForView.id);
-      if (updatedIdea && updatedIdea !== selectedIdeaForView) {
-        // Check if the idea has meaningful updates (metrics or evaluation changed)
-        const hasNewMetrics =
-          (updatedIdea.metrics && !selectedIdeaForView.metrics) ||
-          (updatedIdea.evaluation && !selectedIdeaForView.evaluation) ||
-          (updatedIdea.metrics && selectedIdeaForView.metrics &&
-            (updatedIdea.metrics.uniqueness !== selectedIdeaForView.metrics.uniqueness ||
-             updatedIdea.metrics.feasibility !== selectedIdeaForView.metrics.feasibility));
 
-        if (hasNewMetrics) {
-          setSelectedIdeaForView(updatedIdea);
+      if (updatedIdea) {
+        // Idea still exists - check if it has meaningful updates
+        if (updatedIdea !== selectedIdeaForView) {
+          const hasNewMetrics =
+            (updatedIdea.metrics && !selectedIdeaForView.metrics) ||
+            (updatedIdea.evaluation && !selectedIdeaForView.evaluation) ||
+            (updatedIdea.metrics && selectedIdeaForView.metrics &&
+              (updatedIdea.metrics.uniqueness !== selectedIdeaForView.metrics.uniqueness ||
+               updatedIdea.metrics.feasibility !== selectedIdeaForView.metrics.feasibility));
+
+          if (hasNewMetrics) {
+            setSelectedIdeaForView(updatedIdea);
+          }
+        }
+      } else {
+        // Idea no longer exists (was replaced or removed)
+        // Select the first available idea or clear selection
+        if (ideas.length > 0) {
+          setSelectedIdeaForView(ideas[0]);
+        } else {
+          setSelectedIdeaForView(null);
         }
       }
     }
