@@ -12,6 +12,7 @@ import { getSession } from "@/lib/session";
 function getCurrentPhase(): string {
   if (typeof window === "undefined") return "unknown";
   const path = window.location.pathname;
+  if (path.includes("/evaluation")) return "evaluation";
   if (path.includes("/challenge")) return "challenge";
   if (path.includes("/market")) return "market";
   if (path.includes("/ideation")) return "ideation";
@@ -152,10 +153,13 @@ function TextSelectionContextWrapper({
 }: TextSelectionContextWrapperProps) {
   const { state } = useTextSelection();
 
+  // Don't show CrackIt features on evaluation page
+  const isEvaluationPage = phaseContext.phase === "evaluation";
+
   return (
     <>
       {children}
-      {showCrackIt && (
+      {showCrackIt && !isEvaluationPage && (
         <>
           <SelectionToolbar
             position={state.triggerPosition}
@@ -165,12 +169,14 @@ function TextSelectionContextWrapper({
           <FloatingCrackButton onClick={onDirectChat} />
         </>
       )}
-      <EnhancedAnalysisPanel
-        isOpen={isPanelOpen}
-        onClose={() => setIsPanelOpen(false)}
-        selectedText={selectedText}
-        phaseContext={phaseContext}
-      />
+      {!isEvaluationPage && (
+        <EnhancedAnalysisPanel
+          isOpen={isPanelOpen}
+          onClose={() => setIsPanelOpen(false)}
+          selectedText={selectedText}
+          phaseContext={phaseContext}
+        />
+      )}
     </>
   );
 }
