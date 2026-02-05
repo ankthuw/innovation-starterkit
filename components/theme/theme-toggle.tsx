@@ -33,7 +33,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="h-9 w-9">
+      <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
         <div className="h-4 w-4" />
       </Button>
     );
@@ -44,7 +44,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="h-9 w-9 relative overflow-hidden"
+      className="h-9 w-9 shrink-0 relative overflow-hidden text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800"
       title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
     >
       <div className="relative h-5 w-5">
