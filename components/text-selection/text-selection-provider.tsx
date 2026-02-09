@@ -123,12 +123,16 @@ function TextSelectionContextWrapper({
   return (
     <>
       {children}
-      <SelectionToolbar
-        position={state.triggerPosition}
-        isVisible={state.isVisible}
-        onAnalyze={onAnalyze}
-      />
-      {showCrackIt && <FloatingCrackButton onClick={onDirectChat} />}
+      {showCrackIt && (
+        <>
+          <SelectionToolbar
+            position={state.triggerPosition}
+            isVisible={state.isVisible}
+            onAnalyze={onAnalyze}
+          />
+          <FloatingCrackButton onClick={onDirectChat} />
+        </>
+      )}
       <EnhancedAnalysisPanel
         isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
