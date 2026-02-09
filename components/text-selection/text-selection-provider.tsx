@@ -1,6 +1,7 @@
 "use client"
 
 import { ReactNode, useState, useCallback, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { SelectionToolbar } from "./selection-toolbar";
 import { EnhancedAnalysisPanel } from "./enhanced-analysis-panel";
 import { FloatingCrackButton } from "./floating-crack-button";
@@ -19,7 +20,15 @@ function getCurrentPhase(): string {
   return "unknown";
 }
 
+// Check if Crack-It should be shown (not on i3-prototype pages)
+function shouldShowCrackIt(pathname: string | null): boolean {
+  if (!pathname) return true; // Default to showing if pathname is not available
+  return !pathname.startsWith("/i3-prototype");
+}
+
 export function TextSelectionProvider({ children }: Omit<TextSelectionProviderProps, "onSelection">) {
+  const pathname = usePathname();
+  const showCrackIt = shouldShowCrackIt(pathname);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
 
@@ -74,6 +83,7 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
         setIsPanelOpen={setIsPanelOpen}
         selectedText={selectedText}
         phaseContext={phaseContext}
+        showCrackIt={showCrackIt}
       >
         {children}
       </TextSelectionContextWrapper>
@@ -95,6 +105,7 @@ interface TextSelectionContextWrapperProps {
     idea?: any;
     appraisal?: any;
   };
+  showCrackIt: boolean;
 }
 
 function TextSelectionContextWrapper({
@@ -104,19 +115,24 @@ function TextSelectionContextWrapper({
   isPanelOpen,
   setIsPanelOpen,
   selectedText,
-  phaseContext
+  phaseContext,
+  showCrackIt
 }: TextSelectionContextWrapperProps) {
   const { state } = useTextSelection();
 
   return (
     <>
       {children}
-      <SelectionToolbar
-        position={state.triggerPosition}
-        isVisible={state.isVisible}
-        onAnalyze={onAnalyze}
-      />
-      <FloatingCrackButton onClick={onDirectChat} />
+      {showCrackIt && (
+        <>
+          <SelectionToolbar
+            position={state.triggerPosition}
+            isVisible={state.isVisible}
+            onAnalyze={onAnalyze}
+          />
+          <FloatingCrackButton onClick={onDirectChat} />
+        </>
+      )}
       <EnhancedAnalysisPanel
         isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
