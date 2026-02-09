@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { I3Header } from "@/components/i3-prototype/i3-header";
-import { InnovationStarterkitFAB } from "@/components/i3-prototype/innovation-starterkit-fab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -143,10 +142,8 @@ export default function IdeaPage() {
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={() => {
-                  const fab = document.querySelector(
-                    'button[title="Launch Innovation Starterkit"]'
-                  ) as HTMLButtonElement;
-                  fab?.click();
+                  // Open Innovation Starterkit in new tab
+                  window.open("/challenge", "_blank");
                 }}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -299,9 +296,6 @@ export default function IdeaPage() {
           </form>
         </div>
       </div>
-
-      {/* Floating Action Button */}
-      <InnovationStarterkitFAB />
     </div>
   );
 }
