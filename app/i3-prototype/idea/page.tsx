@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { I3Header } from "@/components/i3-prototype/i3-header";
 import { InnovationStarterkitFAB } from "@/components/i3-prototype/innovation-starterkit-fab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Sparkles, Save, X } from "lucide-react";
+import { Sparkles, Save, X, ChevronRight, FileText } from "lucide-react";
 import type { InnovationSession } from "@/types/innovation";
 
 export default function IdeaPage() {
@@ -44,7 +44,6 @@ export default function IdeaPage() {
   }, []);
 
   const autofillForm = (data: Partial<InnovationSession>) => {
-    // Extract relevant information and autofill the form
     const updates: Partial<typeof formData> = {};
 
     if (data.challenge?.problem) {
@@ -72,8 +71,6 @@ export default function IdeaPage() {
     }
 
     setFormData((prev) => ({ ...prev, ...updates }));
-
-    // Show indicator animation
     setShowAutofillIndicator(true);
     setTimeout(() => setShowAutofillIndicator(false), 3000);
   };
@@ -83,33 +80,38 @@ export default function IdeaPage() {
   };
 
   const handleSave = () => {
-    // In real app, save to backend
     alert("Idea saved successfully!");
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <I3Header />
 
-      {/* Header */}
-      <section className="bg-white border-b">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Idea</h1>
-          <p className="text-gray-600">
-            Share your innovative idea and make a difference
-          </p>
+      {/* Breadcrumb */}
+      <div className="bg-gray-50 border-b border-gray-200 px-4 py-2">
+        <div className="max-w-5xl mx-auto flex items-center gap-2 text-sm">
+          <Link href="/i3-prototype" className="text-gray-600 hover:text-gray-900">
+            Home
+          </Link>
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <span className="text-gray-900 font-medium">New Idea</span>
         </div>
-      </section>
+      </div>
+
+      {/* Page Header */}
+      <div className="border-b border-gray-200 px-4 py-6">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900">New Draft Idea</h1>
+        </div>
+      </div>
 
       {/* Autofill Indicator */}
       {showAutofillIndicator && (
-        <div className="fixed top-20 right-6 z-50 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-right-5">
+        <div className="fixed top-24 right-6 z-50 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-right-5">
           <Sparkles className="w-5 h-5" />
           <div>
             <div className="font-medium">Form Auto-Filled!</div>
-            <div className="text-sm">
-              Your innovation details have been added
-            </div>
+            <div className="text-sm">Your innovation details have been added</div>
           </div>
           <button
             onClick={() => setShowAutofillIndicator(false)}
@@ -120,179 +122,183 @@ export default function IdeaPage() {
         </div>
       )}
 
-      {/* Idea Form */}
-      <section className="py-8">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="p-8">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Idea Details
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Fill in the details below or use the Innovation Starterkit for
-                  AI-guided idea development
+      {/* Main Form */}
+      <div className="px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Helper banner */}
+          <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 mb-1">
+                  Need help developing your idea?
+                </h3>
+                <p className="text-sm text-blue-700 mb-2">
+                  Click the Innovation Starterkit button for AI-guided idea development
                 </p>
               </div>
               <Button
-                variant="outline"
                 size="sm"
-                className="flex items-center gap-2"
+                className="bg-blue-600 hover:bg-blue-700"
                 onClick={() => {
-                  // Trigger the FAB click programmatically
                   const fab = document.querySelector(
                     'button[title="Launch Innovation Starterkit"]'
                   ) as HTMLButtonElement;
                   fab?.click();
                 }}
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4 mr-2" />
                 Launch Innovation Starterkit
               </Button>
             </div>
+          </div>
 
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-              {/* Title */}
-              <div>
-                <Label htmlFor="title" className="text-base font-medium">
-                  Title *
+          {/* Form */}
+          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            {/* Title */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-12 md:col-span-3">
+                <Label htmlFor="title" className="text-sm font-medium text-gray-700">
+                  Title <span className="text-red-500">*</span>
                 </Label>
+              </div>
+              <div className="col-span-12 md:col-span-9">
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => handleChange("title", e.target.value)}
                   placeholder="Give your idea a catchy title"
-                  className="mt-2"
+                  className="w-full"
                   required
                 />
               </div>
+            </div>
 
-              {/* Description */}
-              <div>
-                <Label htmlFor="description" className="text-base font-medium">
-                  Summary *
+            {/* Description */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-12 md:col-span-3">
+                <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+                  Summary <span className="text-red-500">*</span>
                 </Label>
+              </div>
+              <div className="col-span-12 md:col-span-9">
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleChange("description", e.target.value)}
                   placeholder="Briefly describe your idea in one paragraph"
-                  className="mt-2 min-h-[100px]"
+                  className="min-h-[100px] w-full"
                   required
                 />
               </div>
+            </div>
 
-              {/* Problem */}
-              <div>
-                <Label htmlFor="problem" className="text-base font-medium">
-                  Problem Statement *
+            {/* Problem */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-12 md:col-span-3">
+                <Label htmlFor="problem" className="text-sm font-medium text-gray-700">
+                  Problem Statement <span className="text-red-500">*</span>
                 </Label>
+              </div>
+              <div className="col-span-12 md:col-span-9">
                 <Textarea
                   id="problem"
                   value={formData.problem}
                   onChange={(e) => handleChange("problem", e.target.value)}
                   placeholder="What problem does your idea solve? What is the current pain point?"
-                  className="mt-2 min-h-[120px]"
+                  className="min-h-[120px] w-full"
                   required
                 />
               </div>
+            </div>
 
-              {/* Solution */}
-              <div>
-                <Label htmlFor="solution" className="text-base font-medium">
-                  Proposed Solution *
+            {/* Solution */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-12 md:col-span-3">
+                <Label htmlFor="solution" className="text-sm font-medium text-gray-700">
+                  Proposed Solution <span className="text-red-500">*</span>
                 </Label>
+              </div>
+              <div className="col-span-12 md:col-span-9">
                 <Textarea
                   id="solution"
                   value={formData.solution}
                   onChange={(e) => handleChange("solution", e.target.value)}
                   placeholder="Describe your solution and how it addresses the problem"
-                  className="mt-2 min-h-[120px]"
+                  className="min-h-[120px] w-full"
                   required
                 />
               </div>
+            </div>
 
-              {/* Impact */}
-              <div>
-                <Label htmlFor="impact" className="text-base font-medium">
-                  Expected Impact *
+            {/* Impact */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-12 md:col-span-3">
+                <Label htmlFor="impact" className="text-sm font-medium text-gray-700">
+                  Expected Impact <span className="text-red-500">*</span>
                 </Label>
+              </div>
+              <div className="col-span-12 md:col-span-9">
                 <Textarea
                   id="impact"
                   value={formData.impact}
                   onChange={(e) => handleChange("impact", e.target.value)}
                   placeholder="What impact will your idea have? Include quantifiable benefits if possible"
-                  className="mt-2 min-h-[100px]"
+                  className="min-h-[100px] w-full"
                   required
                 />
               </div>
+            </div>
 
-              {/* Category */}
-              <div>
-                <Label htmlFor="category" className="text-base font-medium">
-                  Category *
+            {/* Category */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-12 md:col-span-3">
+                <Label htmlFor="category" className="text-sm font-medium text-gray-700">
+                  Category <span className="text-red-500">*</span>
                 </Label>
+              </div>
+              <div className="col-span-12 md:col-span-9">
                 <select
                   id="category"
                   value={formData.category}
                   onChange={(e) => handleChange("category", e.target.value)}
-                  className="mt-2 w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
                   <option value="">Select a category</option>
                   <option value="Digital Solutions">Digital Solutions</option>
-                  <option value="Products & Services">
-                    Products & Services
-                  </option>
+                  <option value="Products & Services">Products & Services</option>
                   <option value="Processes">Processes</option>
                   <option value="Sustainability">Sustainability</option>
-                  <option value="Customer Experience">
-                    Customer Experience
-                  </option>
+                  <option value="Customer Experience">Customer Experience</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-4 pt-6 border-t">
-                <Button variant="outline" type="button">
-                  Save as Draft
-                </Button>
-                <Button type="button" onClick={handleSave}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Submit Idea
-                </Button>
-              </div>
-            </form>
-          </Card>
-
-          {/* Help Card */}
-          <Card className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Sparkles className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-2">
-                  Need help developing your idea?
-                </h3>
-                <p className="text-sm text-blue-700 mb-4">
-                  Click the floating button in the bottom-right corner to launch
-                  the Innovation Starterkit. Our AI-powered wizard will guide you
-                  through:
-                </p>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Defining your challenge and target audience</li>
-                  <li>• Analyzing market size and competition</li>
-                  <li>• Generating and evaluating ideas</li>
-                  <li>• Financial analysis and ROI calculation</li>
-                  <li>• Creating a professional pitch deck</li>
-                </ul>
-              </div>
             </div>
-          </Card>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Save as Draft
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Submit Idea
+              </Button>
+            </div>
+          </form>
         </div>
-      </section>
+      </div>
 
       {/* Floating Action Button */}
       <InnovationStarterkitFAB />

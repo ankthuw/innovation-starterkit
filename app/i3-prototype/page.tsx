@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { I3Header } from "@/components/i3-prototype/i3-header";
-import { ArrowRight, TrendingUp, Users, Target } from "lucide-react";
+import { ChevronRight, Target, TrendingUp, Users } from "lucide-react";
 
 export default function I3StartPage() {
   const campaigns = [
@@ -37,89 +37,88 @@ export default function I3StartPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <I3Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold mb-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome to Innovation Platform i³
           </h1>
-          <p className="text-xl text-blue-100 max-w-2xl">
-            Transform your ideas into reality. Collaborate, innovate, and shape
-            the future with our innovation management platform.
+          <p className="text-gray-600 text-lg">
+            Discover campaigns, submit your ideas, and drive innovation forward
           </p>
         </div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="py-12 bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">1,247</div>
-              <div className="text-gray-600 mt-1">Active Innovators</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">3,892</div>
-              <div className="text-gray-600 mt-1">Ideas Submitted</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">156</div>
-              <div className="text-gray-600 mt-1">Implemented Projects</div>
-            </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <div className="text-3xl font-bold text-blue-600 mb-1">1,247</div>
+            <div className="text-sm text-gray-600">Active Innovators</div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <div className="text-3xl font-bold text-blue-600 mb-1">3,892</div>
+            <div className="text-sm text-gray-600">Ideas Submitted</div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <div className="text-3xl font-bold text-blue-600 mb-1">156</div>
+            <div className="text-sm text-gray-600">Implemented Projects</div>
           </div>
         </div>
-      </section>
 
-      {/* Campaigns Section */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Active Campaigns</h2>
+        {/* Active Campaigns */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">Active Campaigns</h2>
             <Link
               href="/i3-prototype/campaign"
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1"
             >
-              View All Campaigns
-              <ArrowRight className="w-4 h-4" />
+              View all campaigns
+              <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {campaigns.map((campaign) => {
               const Icon = campaign.icon;
               return (
                 <Link
                   key={campaign.id}
                   href={`/i3-prototype/campaign/${campaign.id}`}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                  className="group bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md hover:border-blue-300 transition-all"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="p-3 bg-blue-50 rounded-lg">
                       <Icon className="w-6 h-6 text-blue-600" />
                     </div>
                     <span
-                      className={`px-3 py-1 text-xs font-medium rounded-full ${
+                      className={`px-2 py-1 text-xs font-medium rounded ${
                         campaign.status === "Active"
                           ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-700"
+                          : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {campaign.status}
                     </span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600">
                     {campaign.title}
                   </h3>
+
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                     {campaign.description}
                   </p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
+
+                  <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-100">
                     <span>{campaign.participants} participants</span>
                     <span>
-                      Due: {new Date(campaign.deadline).toLocaleDateString()}
+                      {new Date(campaign.deadline).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </span>
                   </div>
                 </Link>
@@ -127,49 +126,58 @@ export default function I3StartPage() {
             })}
           </div>
         </div>
-      </section>
 
-      {/* Quick Actions */}
-      <section className="py-12 bg-white border-t">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Link
               href="/i3-prototype/idea"
-              className="p-6 bg-blue-50 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
+              className="group bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md hover:border-blue-300 transition-all"
             >
-              <h3 className="font-semibold text-blue-900 mb-2">
-                Create New Idea
-              </h3>
-              <p className="text-sm text-blue-700">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100">
+                  <Target className="w-5 h-5 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900">Create New Idea</h3>
+              </div>
+              <p className="text-sm text-gray-600">
                 Start with a fresh idea using our guided innovation process
               </p>
             </Link>
+
             <Link
               href="/i3-prototype/campaign"
-              className="p-6 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+              className="group bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md hover:border-blue-300 transition-all"
             >
-              <h3 className="font-semibold text-gray-900 mb-2">
-                Browse Campaigns
-              </h3>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-gray-100">
+                  <TrendingUp className="w-5 h-5 text-gray-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900">Browse Campaigns</h3>
+              </div>
               <p className="text-sm text-gray-600">
                 Explore active challenges and innovation opportunities
               </p>
             </Link>
+
             <Link
               href="/i3-prototype/idea"
-              className="p-6 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+              className="group bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md hover:border-blue-300 transition-all"
             >
-              <h3 className="font-semibold text-gray-900 mb-2">
-                My Ideas
-              </h3>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-gray-100">
+                  <Users className="w-5 h-5 text-gray-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900">My Ideas</h3>
+              </div>
               <p className="text-sm text-gray-600">
                 View and manage your submitted ideas
               </p>
             </Link>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
