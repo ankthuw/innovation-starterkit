@@ -83,6 +83,7 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
         setIsPanelOpen={setIsPanelOpen}
         selectedText={selectedText}
         phaseContext={phaseContext}
+        showCrackIt={showCrackIt}
       >
         {children}
       </TextSelectionContextWrapper>
@@ -104,6 +105,7 @@ interface TextSelectionContextWrapperProps {
     idea?: any;
     appraisal?: any;
   };
+  showCrackIt: boolean;
 }
 
 function TextSelectionContextWrapper({
@@ -113,7 +115,8 @@ function TextSelectionContextWrapper({
   isPanelOpen,
   setIsPanelOpen,
   selectedText,
-  phaseContext
+  phaseContext,
+  showCrackIt
 }: TextSelectionContextWrapperProps) {
   const { state } = useTextSelection();
 
