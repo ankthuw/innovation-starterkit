@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { I3Header } from "@/components/i3-prototype/i3-header";
+import { InnovationStarterkitFAB } from "@/components/i3-prototype/innovation-starterkit-fab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Save, X, ChevronRight, FileText } from "lucide-react";
+import { Sparkles, Save, X, ChevronRight } from "lucide-react";
 import type { InnovationSession } from "@/types/innovation";
 
 export default function IdeaPage() {
@@ -142,8 +143,11 @@ export default function IdeaPage() {
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={() => {
-                  // Open Innovation Starterkit in new tab
-                  window.open("/challenge", "_blank");
+                  // Trigger the FAB click to open modal
+                  const fab = document.querySelector(
+                    'button[title="Launch Innovation Starterkit"]'
+                  ) as HTMLButtonElement;
+                  fab?.click();
                 }}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -296,6 +300,9 @@ export default function IdeaPage() {
           </form>
         </div>
       </div>
+
+      {/* Floating Action Button */}
+      <InnovationStarterkitFAB />
     </div>
   );
 }

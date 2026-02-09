@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import type { InnovationSession } from "@/types/innovation";
 import { FileText, Sparkles } from "lucide-react";
 
@@ -22,6 +22,7 @@ export function InnovationStarterkitModal({
 }: InnovationStarterkitModalProps) {
   const [sessionData, setSessionData] = useState<Partial<InnovationSession>>({});
   const [showSummary, setShowSummary] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeKey, setIframeKey] = useState(0);
 
@@ -47,8 +48,13 @@ export function InnovationStarterkitModal({
     if (isOpen) {
       setIframeKey((prev) => prev + 1);
       setShowSummary(false);
+      setIsLoading(true);
     }
   }, [isOpen]);
+
+  const handleIframeLoad = () => {
+    setIsLoading(false);
+  };
 
   if (showSummary) {
     return (
@@ -178,6 +184,16 @@ export function InnovationStarterkitModal({
           <X className="h-5 w-5 text-gray-600" />
         </button>
 
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+              <p className="text-gray-600">Loading Innovation Starterkit...</p>
+            </div>
+          </div>
+        )}
+
         {/* iframe to actual wizard - full height */}
         <iframe
           key={iframeKey}
@@ -185,6 +201,7 @@ export function InnovationStarterkitModal({
           src="/challenge"
           className="w-full h-[95vh] border-0"
           title="Innovation Starterkit Wizard"
+          onLoad={handleIframeLoad}
         />
       </DialogContent>
     </Dialog>
