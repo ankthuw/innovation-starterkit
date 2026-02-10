@@ -304,7 +304,7 @@ Return ONLY the JSON, no additional text`;
 
     const response = await openai.chat.completions.create({
       model: getModel(),
-      max_completion_tokens: 500,
+      max_completion_tokens: 4096,
       messages: [
         { role: 'system', content: extractionPrompt },
         { role: 'user', content: 'Extract the progress update from this conversation.' }
@@ -312,7 +312,10 @@ Return ONLY the JSON, no additional text`;
       // Azure OpenAI doesn't support the 'thinking' parameter
     });
 
+    console.log('[extractProgressFromConversation] Full response:', JSON.stringify(response, null, 2));
     const content = response.choices?.[0]?.message?.content;
+    console.log('[extractProgressFromConversation] Content:', content);
+
     if (!content) {
       throw new Error('No content in response');
     }
@@ -402,7 +405,7 @@ Rules:
 
     const response = await openai.chat.completions.create({
       model: getModel(),
-      max_completion_tokens: 1000,
+      max_completion_tokens: 4096,
       messages: [
         { role: 'system', content: extractionPrompt },
         { role: 'user', content: 'Extract the market progress update from this conversation.' }
