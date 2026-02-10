@@ -1,11 +1,39 @@
 import OpenAI from 'openai';
 import type { ChatCompletionChunk } from 'openai/resources/chat/completions';
 import { config } from './config';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import fetch from 'node-fetch';
 
-// Initialize OpenAI client (Z.AI OpenAI-compatible endpoint)
+// Initialize OpenAI client with proxy support for corporate networks
+const createProxyFetch = () => {
+  const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
+  if (proxyUrl) {
+    console.log(`[OpenAI] Using proxy: ${proxyUrl}`);
+    const agent = new HttpsProxyAgent(proxyUrl);
+    return async (input: RequestInfo | URL, init?: RequestInit) => {
+      // Ensure api-version query parameter is present for Azure OpenAI
+      let url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+
+      // Add api-version if not present - append to the END of the URL
+      if (url && !url.includes('api-version=')) {
+        url = `${url}?api-version=2025-01-01-preview`;
+      }
+
+      const updatedInput = typeof input === 'string' ? url : input instanceof URL ? new URL(url) : { ...input, url };
+
+      return fetch(updatedInput as any, {
+        ...init,
+        agent: agent as any,
+      });
+    };
+  }
+  return undefined;
+};
+
 const openai = new OpenAI({
   apiKey: config.openai.apiKey,
   baseURL: config.openai.baseURL,
+  fetch: createProxyFetch(),
 });
 
 // Export the OpenAI client for legacy code that imported 'anthropic'
@@ -55,10 +83,9 @@ export async function sendClaudeMessage<T = unknown>(
 
     const response = await openai.chat.completions.create({
       model: config.openai.defaultModel,
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
       messages: openaiMessages,
-      // Disable Z.AI thinking mode
-      thinking: { type: "disabled" } as any,
+      // Azure OpenAI doesn't support the 'thinking' parameter
     });
 
     const content = response.choices?.[0]?.message?.content;
@@ -128,11 +155,10 @@ export async function* streamClaudeMessage(
 
   const stream = await openai.chat.completions.create({
     model: config.openai.defaultModel,
-    max_tokens: maxTokens,
+    max_completion_tokens: maxTokens,
     messages: openaiMessages,
     stream: true,
-    // Disable Z.AI thinking mode for faster responses
-    thinking: { type: "disabled" } as any,
+    // Azure OpenAI doesn't support the 'thinking' parameter
   });
 
   for await (const chunk of stream) {
@@ -170,7 +196,7 @@ export async function* streamClaudeWithThinking(
 
   const stream = await openai.chat.completions.create({
     model: config.openai.defaultModel,
-    max_tokens: 4096,
+    max_completion_tokens: 4096,
     messages: [
       { role: 'system', content: systemPrompt },
       ...messages.map(msg => ({
@@ -179,9 +205,7 @@ export async function* streamClaudeWithThinking(
       }))
     ],
     stream: true,
-    // Only enable thinking mode if explicitly requested (options.thinking === true)
-    // By default, disable it for cleaner responses
-    ...(options?.thinking !== true && { thinking: { type: "disabled" } as any }),
+    // Azure OpenAI doesn't support the 'thinking' parameter
   }) as AsyncIterable<ChatCompletionChunk>;
 
   let eventCount = 0;
