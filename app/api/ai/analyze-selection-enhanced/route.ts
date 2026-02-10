@@ -164,10 +164,15 @@ Generate a search query. Return ONLY the query.`;
 
                 const updatedInput = typeof input === 'string' ? url : input instanceof URL ? new URL(url) : { ...input, url };
 
+                // Filter out null values from init to avoid type errors
+                const cleanInit: RequestInit = Object.fromEntries(
+                  Object.entries(init || {}).filter(([_, v]) => v !== null && v !== undefined)
+                ) as RequestInit;
+
                 return fetch(updatedInput as any, {
-                  ...init,
+                  ...cleanInit,
                   agent: agent as any,
-                });
+                } as any);
               };
             }
 
