@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, RefreshCw, HelpCircle, Download, RotateCcw, MoreVertical, Save, Upload } from "lucide-react";
+import { Check, RefreshCw, HelpCircle, Download, RotateCcw, MoreVertical, Save, Upload, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WIZARD_STEPS } from "@/types/innovation";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,10 @@ import { clearSession, resetPhase, saveStateToFile, loadStateFromFile, getSessio
 import { exportSessionToMarkdown } from "@/lib/export-session";
 import { useRef, useMemo } from "react";
 import { PhaseSummaryTooltip } from "./phase-summary-tooltip";
+import { ThemeToggle } from "@/components/theme";
+import { CaseStudiesButton } from "@/components/case-studies";
+import { CaseStudyBanner } from "@/components/case-studies/case-study-banner";
+import { useCaseStudy } from "@/contexts/case-study-context";
 
 interface ProgressHeaderProps {
   currentStep: string;
@@ -28,6 +32,7 @@ export function ProgressHeader({ currentStep, showRestart = false, onShowTour }:
   const pathname = usePathname();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isActive: isCaseStudyActive } = useCaseStudy();
 
   // Get session data for tooltips
   const session = useMemo(() => getSession(), []);
@@ -43,6 +48,18 @@ export function ProgressHeader({ currentStep, showRestart = false, onShowTour }:
     if (confirm("Are you sure you want to start over? This will clear all your progress.")) {
       clearSession();
       window.location.href = "/challenge";
+    }
+  };
+
+  const handleLogout = async () => {
+    if (confirm("Are you sure you want to logout?")) {
+      try {
+        await fetch("/api/evaluation/logout", { method: "POST" });
+        window.location.href = "/evaluation";
+      } catch (error) {
+        console.error("Logout error:", error);
+        window.location.href = "/evaluation";
+      }
     }
   };
 
@@ -80,8 +97,14 @@ export function ProgressHeader({ currentStep, showRestart = false, onShowTour }:
   };
 
   return (
-    <header className="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-3">
+    <>
+      {/* Case Study Mode Banner */}
+      {isCaseStudyActive && <CaseStudyBanner />}
+
+      {/* Normal Header (hidden in case study mode) */}
+      {!isCaseStudyActive && (
+        <header className="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-3">
         {/* Logo + Current Step + Progress */}
         <div className="flex items-center gap-4">
           {/* Logo/Brand - Bigger and more visible */}
@@ -192,6 +215,12 @@ export function ProgressHeader({ currentStep, showRestart = false, onShowTour }:
             onChange={handleFileChange}
           />
 
+          {/* Case Studies Button */}
+          <CaseStudiesButton currentStep={currentStep} />
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* More Menu Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -243,10 +272,20 @@ export function ProgressHeader({ currentStep, showRestart = false, onShowTour }:
                   </DropdownMenuItem>
                 </>
               )}
+
+              <DropdownMenuSeparator />
+
+              {/* Logout */}
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400">
+                <LogOut className="h-4 w-4 mr-2" />
+                <span>Logout</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
     </header>
+      )}
+    </>
   );
 }
