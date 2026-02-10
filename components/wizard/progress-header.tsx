@@ -266,7 +266,7 @@ export function ProgressHeader({ currentStep, showRestart = false, onShowTour }:
 
               {/* i3 Demo */}
               <DropdownMenuItem asChild>
-                <Link href="/i3-prototype" className="cursor-pointer">
+                <Link href="/i3-prototype" className="cursor-pointer" target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4 mr-2" />
                   <span>i3 Demo</span>
                 </Link>
