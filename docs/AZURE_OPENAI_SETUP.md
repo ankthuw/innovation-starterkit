@@ -26,9 +26,6 @@ OPENAI_MODEL=your-model-name
 # Tavily API Key (for web search)
 TAVILY_API_KEY=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
 
-# Database
-DATABASE_URL="file:./dev.db"
-
 # Authentication
 EVALUATION_USER_EMAIL=evaluator@innovationkit.local
 EVALUATION_USER_PASSWORD=Eval2025!
