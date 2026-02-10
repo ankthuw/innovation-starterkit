@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useState, useCallback, useMemo } from "react";
+import { ReactNode, useState, useCallback, useMemo, useEffect } from "react";
 import { SelectionToolbar } from "./selection-toolbar";
 import { EnhancedAnalysisPanel } from "./enhanced-analysis-panel";
 import { FloatingCrackButton } from "./floating-crack-button";
@@ -23,6 +23,39 @@ function getCurrentPhase(): string {
 export function TextSelectionProvider({ children }: Omit<TextSelectionProviderProps, "onSelection">) {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+  const [currentPhase, setCurrentPhase] = useState("unknown");
+
+  // Update phase when URL changes
+  useEffect(() => {
+    const updatePhase = () => {
+      setCurrentPhase(getCurrentPhase());
+    };
+
+    updatePhase();
+
+    // Listen for route changes
+    window.addEventListener("popstate", updatePhase);
+
+    // Also check on pushState/replaceState
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function(...args) {
+      originalPushState.apply(history, args);
+      updatePhase();
+    };
+
+    history.replaceState = function(...args) {
+      originalReplaceState.apply(history, args);
+      updatePhase();
+    };
+
+    return () => {
+      window.removeEventListener("popstate", updatePhase);
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+    };
+  }, []);
 
   const handleAnalyze = useCallback(() => {
     const selection = window.getSelection();
@@ -47,9 +80,8 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
     setIsPanelOpen(true);
   }, []);
 
-  // Get phase context
+  // Get phase context - recalculate when phase or panel state changes
   const phaseContext = useMemo(() => {
-    const phase = getCurrentPhase();
     const sessionData = getSession();
 
     // Find selected idea from ideas array
@@ -58,13 +90,13 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
       : undefined;
 
     return {
-      phase,
+      phase: currentPhase,
       challenge: sessionData?.challenge,
       market: sessionData?.marketAnalysis,
       idea: selectedIdea,
       appraisal: sessionData?.investmentAppraisal
     };
-  }, [isPanelOpen]); // Recalculate when panel opens to get fresh session data
+  }, [currentPhase, isPanelOpen]); // Recalculate when phase changes or panel opens
 
   return (
     <BaseTextSelectionProvider>
