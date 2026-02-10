@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, RefreshCw, HelpCircle, Download, RotateCcw, MoreVertical, Save, Upload, LogOut } from "lucide-react";
+import { Check, RefreshCw, HelpCircle, Download, RotateCcw, MoreVertical, Save, Upload, ExternalLink, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WIZARD_STEPS } from "@/types/innovation";
 import { Button } from "@/components/ui/button";
@@ -260,6 +260,16 @@ export function ProgressHeader({ currentStep, showRestart = false, onShowTour }:
               <DropdownMenuItem onClick={handleExport}>
                 <Download className="h-4 w-4 mr-2" />
                 <span>Export as Markdown</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              {/* i3 Demo */}
+              <DropdownMenuItem asChild>
+                <Link href="/i3-prototype" className="cursor-pointer">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  <span>i3 Demo</span>
+                </Link>
               </DropdownMenuItem>
 
               {/* Restart */}

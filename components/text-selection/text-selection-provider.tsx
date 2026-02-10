@@ -1,6 +1,7 @@
 "use client"
 
-import { ReactNode, useState, useCallback, useMemo, useEffect } from "react";
+import { ReactNode, useState, useCallback, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { SelectionToolbar } from "./selection-toolbar";
 import { EnhancedAnalysisPanel } from "./enhanced-analysis-panel";
 import { FloatingCrackButton } from "./floating-crack-button";
@@ -20,42 +21,18 @@ function getCurrentPhase(): string {
   return "unknown";
 }
 
+// Check if Crack-It should be shown (not on evaluation or i3-prototype pages)
+function shouldShowCrackIt(pathname: string | null): boolean {
+  if (!pathname) return true; // Default to showing if pathname is not available
+  // Hide on evaluation page and i3-prototype pages
+  return !pathname.startsWith("/evaluation") && !pathname.startsWith("/i3-prototype");
+}
+
 export function TextSelectionProvider({ children }: Omit<TextSelectionProviderProps, "onSelection">) {
+  const pathname = usePathname();
+  const showCrackIt = shouldShowCrackIt(pathname);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
-  const [currentPhase, setCurrentPhase] = useState("unknown");
-
-  // Update phase when URL changes
-  useEffect(() => {
-    const updatePhase = () => {
-      setCurrentPhase(getCurrentPhase());
-    };
-
-    updatePhase();
-
-    // Listen for route changes
-    window.addEventListener("popstate", updatePhase);
-
-    // Also check on pushState/replaceState
-    const originalPushState = history.pushState;
-    const originalReplaceState = history.replaceState;
-
-    history.pushState = function(...args) {
-      originalPushState.apply(history, args);
-      updatePhase();
-    };
-
-    history.replaceState = function(...args) {
-      originalReplaceState.apply(history, args);
-      updatePhase();
-    };
-
-    return () => {
-      window.removeEventListener("popstate", updatePhase);
-      history.pushState = originalPushState;
-      history.replaceState = originalReplaceState;
-    };
-  }, []);
 
   const handleAnalyze = useCallback(() => {
     const selection = window.getSelection();
@@ -80,8 +57,9 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
     setIsPanelOpen(true);
   }, []);
 
-  // Get phase context - recalculate when phase or panel state changes
+  // Get phase context - use usePathname for reactive updates
   const phaseContext = useMemo(() => {
+    const phase = getCurrentPhase();
     const sessionData = getSession();
 
     // Find selected idea from ideas array
@@ -90,13 +68,13 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
       : undefined;
 
     return {
-      phase: currentPhase,
+      phase,
       challenge: sessionData?.challenge,
       market: sessionData?.marketAnalysis,
       idea: selectedIdea,
       appraisal: sessionData?.investmentAppraisal
     };
-  }, [currentPhase, isPanelOpen]); // Recalculate when phase changes or panel opens
+  }, [pathname, isPanelOpen]); // Recalculate when pathname or panel state changes
 
   return (
     <BaseTextSelectionProvider>
@@ -107,6 +85,7 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
         setIsPanelOpen={setIsPanelOpen}
         selectedText={selectedText}
         phaseContext={phaseContext}
+        showCrackIt={showCrackIt}
       >
         {children}
       </TextSelectionContextWrapper>
@@ -128,6 +107,7 @@ interface TextSelectionContextWrapperProps {
     idea?: any;
     appraisal?: any;
   };
+  showCrackIt: boolean;
 }
 
 function TextSelectionContextWrapper({
@@ -137,17 +117,15 @@ function TextSelectionContextWrapper({
   isPanelOpen,
   setIsPanelOpen,
   selectedText,
-  phaseContext
+  phaseContext,
+  showCrackIt
 }: TextSelectionContextWrapperProps) {
   const { state } = useTextSelection();
-
-  // Don't show CrackIt features on evaluation page
-  const isEvaluationPage = phaseContext.phase === "evaluation";
 
   return (
     <>
       {children}
-      {!isEvaluationPage && (
+      {showCrackIt && (
         <>
           <SelectionToolbar
             position={state.triggerPosition}
@@ -155,14 +133,14 @@ function TextSelectionContextWrapper({
             onAnalyze={onAnalyze}
           />
           <FloatingCrackButton onClick={onDirectChat} />
-          <EnhancedAnalysisPanel
-            isOpen={isPanelOpen}
-            onClose={() => setIsPanelOpen(false)}
-            selectedText={selectedText}
-            phaseContext={phaseContext}
-          />
         </>
       )}
+      <EnhancedAnalysisPanel
+        isOpen={isPanelOpen}
+        onClose={() => setIsPanelOpen(false)}
+        selectedText={selectedText}
+        phaseContext={phaseContext}
+      />
     </>
   );
 }
