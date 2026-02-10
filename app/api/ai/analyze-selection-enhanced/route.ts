@@ -5,6 +5,8 @@ import { getSession } from "@/lib/session";
 import { tavilySearch } from "@/lib/tavily-client";
 import { config } from "@/lib/config";
 import OpenAI from "openai";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import fetch from "node-fetch";
 
 interface Message {
   role: "user" | "assistant";
@@ -142,11 +144,34 @@ Selected text: "${selectedText.trim()}"
 
 Generate a search query. Return ONLY the query.`;
 
-            // Create OpenAI client for query generation
-            const openai = new OpenAI({
+            // Create OpenAI client for query generation with proxy support
+            const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
+            let clientOptions: any = {
               apiKey: config.openai.apiKey,
               baseURL: config.openai.baseURL,
-            });
+            };
+
+            if (proxyUrl) {
+              const agent = new HttpsProxyAgent(proxyUrl);
+              clientOptions.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+                // Ensure api-version query parameter is present for Azure OpenAI
+                let url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+
+                // Add api-version if not present - append to the END of the URL
+                if (url && !url.includes('api-version=')) {
+                  url = `${url}?api-version=2025-01-01-preview`;
+                }
+
+                const updatedInput = typeof input === 'string' ? url : input instanceof URL ? new URL(url) : { ...input, url };
+
+                return fetch(updatedInput as any, {
+                  ...init,
+                  agent: agent as any,
+                });
+              };
+            }
+
+            const openai = new OpenAI(clientOptions);
 
             const queryResponse = await openai.chat.completions.create({
               model: config.openai.defaultModel,
