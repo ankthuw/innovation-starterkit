@@ -12,6 +12,7 @@ import { getSession } from "@/lib/session";
 function getCurrentPhase(): string {
   if (typeof window === "undefined") return "unknown";
   const path = window.location.pathname;
+  if (path.includes("/evaluation")) return "evaluation";
   if (path.includes("/challenge")) return "challenge";
   if (path.includes("/market")) return "market";
   if (path.includes("/ideation")) return "ideation";
@@ -20,10 +21,11 @@ function getCurrentPhase(): string {
   return "unknown";
 }
 
-// Check if Crack-It should be shown (not on i3-prototype pages)
+// Check if Crack-It should be shown (not on evaluation or i3-prototype pages)
 function shouldShowCrackIt(pathname: string | null): boolean {
   if (!pathname) return true; // Default to showing if pathname is not available
-  return !pathname.startsWith("/i3-prototype");
+  // Hide on evaluation page and i3-prototype pages
+  return !pathname.startsWith("/evaluation") && !pathname.startsWith("/i3-prototype");
 }
 
 export function TextSelectionProvider({ children }: Omit<TextSelectionProviderProps, "onSelection">) {
@@ -55,7 +57,7 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
     setIsPanelOpen(true);
   }, []);
 
-  // Get phase context
+  // Get phase context - use usePathname for reactive updates
   const phaseContext = useMemo(() => {
     const phase = getCurrentPhase();
     const sessionData = getSession();
@@ -72,7 +74,7 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
       idea: selectedIdea,
       appraisal: sessionData?.investmentAppraisal
     };
-  }, [isPanelOpen]); // Recalculate when panel opens to get fresh session data
+  }, [pathname, isPanelOpen]); // Recalculate when pathname or panel state changes
 
   return (
     <BaseTextSelectionProvider>
