@@ -1,25 +1,12 @@
 "use client"
 
-import { ReactNode, useState, useCallback, useMemo, useEffect } from "react";
+import { ReactNode, useState, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { SelectionToolbar } from "./selection-toolbar";
 import { EnhancedAnalysisPanel } from "./enhanced-analysis-panel";
 import { FloatingCrackButton } from "./floating-crack-button";
 import { TextSelectionProvider as BaseTextSelectionProvider, TextSelectionProviderProps, useTextSelection } from "@/hooks/use-text-selection";
 import { getSession } from "@/lib/session";
-
-// Helper to get current phase from URL
-function getCurrentPhase(): string {
-  if (typeof window === "undefined") return "unknown";
-  const path = window.location.pathname;
-  if (path.includes("/evaluation")) return "evaluation";
-  if (path.includes("/challenge")) return "challenge";
-  if (path.includes("/market")) return "market";
-  if (path.includes("/ideation")) return "ideation";
-  if (path.includes("/investment-appraisal")) return "investment-appraisal";
-  if (path.includes("/pitch")) return "pitch";
-  return "unknown";
-}
 
 // Check if Crack-It should be shown (not on i3-prototype pages)
 function shouldShowCrackIt(pathname: string | null): boolean {
@@ -32,39 +19,17 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
   const showCrackIt = shouldShowCrackIt(pathname);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
-  const [currentPhase, setCurrentPhase] = useState("unknown");
 
-  // Update phase when URL changes
-  useEffect(() => {
-    const updatePhase = () => {
-      setCurrentPhase(getCurrentPhase());
-    };
-
-    updatePhase();
-
-    // Listen for route changes
-    window.addEventListener("popstate", updatePhase);
-
-    // Also check on pushState/replaceState
-    const originalPushState = history.pushState;
-    const originalReplaceState = history.replaceState;
-
-    history.pushState = function(...args) {
-      originalPushState.apply(history, args);
-      updatePhase();
-    };
-
-    history.replaceState = function(...args) {
-      originalReplaceState.apply(history, args);
-      updatePhase();
-    };
-
-    return () => {
-      window.removeEventListener("popstate", updatePhase);
-      history.pushState = originalPushState;
-      history.replaceState = originalReplaceState;
-    };
-  }, []);
+  // Derive current phase directly from pathname - no need for useEffect or state
+  const currentPhase = useMemo(() => {
+    if (pathname.includes("/evaluation")) return "evaluation";
+    if (pathname.includes("/challenge")) return "challenge";
+    if (pathname.includes("/market")) return "market";
+    if (pathname.includes("/ideation")) return "ideation";
+    if (pathname.includes("/investment-appraisal")) return "investment-appraisal";
+    if (pathname.includes("/pitch")) return "pitch";
+    return "unknown";
+  }, [pathname]);
 
   const handleAnalyze = useCallback(() => {
     const selection = window.getSelection();
