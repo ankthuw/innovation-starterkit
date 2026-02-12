@@ -8,18 +8,6 @@ import { FloatingCrackButton } from "./floating-crack-button";
 import { TextSelectionProvider as BaseTextSelectionProvider, TextSelectionProviderProps, useTextSelection } from "@/hooks/use-text-selection";
 import { getSession } from "@/lib/session";
 
-// Helper to get current phase from URL
-function getCurrentPhase(): string {
-  if (typeof window === "undefined") return "unknown";
-  const path = window.location.pathname;
-  if (path.includes("/challenge")) return "challenge";
-  if (path.includes("/market")) return "market";
-  if (path.includes("/ideation")) return "ideation";
-  if (path.includes("/investment-appraisal")) return "investment-appraisal";
-  if (path.includes("/pitch")) return "pitch";
-  return "unknown";
-}
-
 // Check if Crack-It should be shown (not on i3-prototype pages)
 function shouldShowCrackIt(pathname: string | null): boolean {
   if (!pathname) return true; // Default to showing if pathname is not available
@@ -31,6 +19,17 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
   const showCrackIt = shouldShowCrackIt(pathname);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+
+  // Derive current phase directly from pathname - no need for useEffect or state
+  const currentPhase = useMemo(() => {
+    if (pathname.includes("/evaluation")) return "evaluation";
+    if (pathname.includes("/challenge")) return "challenge";
+    if (pathname.includes("/market")) return "market";
+    if (pathname.includes("/ideation")) return "ideation";
+    if (pathname.includes("/investment-appraisal")) return "investment-appraisal";
+    if (pathname.includes("/pitch")) return "pitch";
+    return "unknown";
+  }, [pathname]);
 
   const handleAnalyze = useCallback(() => {
     const selection = window.getSelection();
@@ -55,9 +54,8 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
     setIsPanelOpen(true);
   }, []);
 
-  // Get phase context
+  // Get phase context - recalculate when phase or panel state changes
   const phaseContext = useMemo(() => {
-    const phase = getCurrentPhase();
     const sessionData = getSession();
 
     // Find selected idea from ideas array
@@ -66,13 +64,13 @@ export function TextSelectionProvider({ children }: Omit<TextSelectionProviderPr
       : undefined;
 
     return {
-      phase,
+      phase: currentPhase,
       challenge: sessionData?.challenge,
       market: sessionData?.marketAnalysis,
       idea: selectedIdea,
       appraisal: sessionData?.investmentAppraisal
     };
-  }, [isPanelOpen]); // Recalculate when panel opens to get fresh session data
+  }, [currentPhase, isPanelOpen]); // Recalculate when phase changes or panel opens
 
   return (
     <BaseTextSelectionProvider>
@@ -120,10 +118,13 @@ function TextSelectionContextWrapper({
 }: TextSelectionContextWrapperProps) {
   const { state } = useTextSelection();
 
+  // Don't show CrackIt features on evaluation page
+  const isEvaluationPage = phaseContext.phase === "evaluation";
+
   return (
     <>
       {children}
-      {showCrackIt && (
+      {showCrackIt && !isEvaluationPage && (
         <>
           <SelectionToolbar
             position={state.triggerPosition}
@@ -133,12 +134,14 @@ function TextSelectionContextWrapper({
           <FloatingCrackButton onClick={onDirectChat} />
         </>
       )}
-      <EnhancedAnalysisPanel
-        isOpen={isPanelOpen}
-        onClose={() => setIsPanelOpen(false)}
-        selectedText={selectedText}
-        phaseContext={phaseContext}
-      />
+      {!isEvaluationPage && (
+        <EnhancedAnalysisPanel
+          isOpen={isPanelOpen}
+          onClose={() => setIsPanelOpen(false)}
+          selectedText={selectedText}
+          phaseContext={phaseContext}
+        />
+      )}
     </>
   );
 }
