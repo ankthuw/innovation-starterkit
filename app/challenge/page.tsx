@@ -3,6 +3,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ProgressTracker, ProgressItem } from "@/components/wizard/progress-tracker";
+import {
+  CampaignContextPrompt,
+  CampaignContextBanner,
+  useCampaignContext,
+  useCampaignMode,
+} from "@/components/wizard/campaign-context-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +39,16 @@ interface Message extends ChatMessage {
 export default function ChallengePage() {
   const router = useRouter();
   const { isActive: isCaseStudyActive } = useCaseStudy();
+
+  // Campaign context from URL params
+  const campaignContext = useCampaignContext();
+  const {
+    mode: campaignMode,
+    showPrompt: showCampaignPrompt,
+    selectMode: selectCampaignMode,
+    changeMode: changeCampaignMode,
+    isCampaignMode,
+  } = useCampaignMode(campaignContext);
 
   // Required fields for the challenge
   const requiredFields = ["problem", "targetAudience", "currentSolutions"];
@@ -926,6 +942,27 @@ export default function ChallengePage() {
     <>
       {showTour && !isCaseStudyActive && <InteractiveTour onComplete={handleTourComplete} />}
       {!showTour && tourCompleted && !isCaseStudyActive && <WelcomeTooltip />}
+
+      {/* Campaign Mode Selection Prompt */}
+      {campaignContext && showCampaignPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg mx-4">
+            <CampaignContextPrompt
+              campaign={campaignContext}
+              onModeSelect={selectCampaignMode}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Campaign Context Banner (after mode selected) */}
+      {campaignContext && campaignMode && !showCampaignPrompt && (
+        <CampaignContextBanner
+          campaign={campaignContext}
+          mode={campaignMode}
+          onChangeMode={changeCampaignMode}
+        />
+      )}
 
       <PhaseLayout
         currentStep="challenge"

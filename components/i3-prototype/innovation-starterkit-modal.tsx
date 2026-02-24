@@ -14,11 +14,13 @@ import { FileText, Sparkles } from "lucide-react";
 interface InnovationStarterkitModalProps {
   isOpen: boolean;
   onClose: () => void;
+  campaignId?: string | null;
 }
 
 export function InnovationStarterkitModal({
   isOpen,
   onClose,
+  campaignId,
 }: InnovationStarterkitModalProps) {
   const [sessionData, setSessionData] = useState<Partial<InnovationSession>>({});
   const [showSummary, setShowSummary] = useState(false);
@@ -198,7 +200,7 @@ export function InnovationStarterkitModal({
         <iframe
           key={iframeKey}
           ref={iframeRef}
-          src="/challenge"
+          src={campaignId ? `/challenge?campaign=${campaignId}` : "/challenge"}
           className="w-full h-[95vh] border-0"
           title="Innovation Starterkit Wizard"
           onLoad={handleIframeLoad}
