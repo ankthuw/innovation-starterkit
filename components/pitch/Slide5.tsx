@@ -1,49 +1,26 @@
 'use client';
 
 export const Slide5 = () => {
-  const milestones = [
+  const advantages = [
     {
-      quarter: 'Q1',
-      title: 'MVP Launch',
-      description: 'Core platform ready',
+      icon: 'savings',
+      title: 'Affordable Pricing',
+      description: '10x cheaper than enterprise ERP systems',
     },
     {
-      quarter: 'Q2',
-      title: '50 Beta Customers',
-      description: 'Validated product',
+      icon: 'timer',
+      title: '15-Minute Onboarding',
+      description: 'Quick setup vs weeks for enterprise solutions',
     },
     {
-      quarter: 'Q3',
-      title: 'Public Launch',
-      description: 'Go-to-market ready',
+      icon: 'smartphone',
+      title: 'Mobile-First Design',
+      description: 'Manage inventory on-the-go from any device',
     },
     {
-      quarter: 'Q4',
-      title: '500 Customers',
-      description: '$480K ARR',
-    },
-  ];
-
-  const fundingItems = [
-    {
-      icon: 'code',
-      title: 'Product Development',
-      description: 'Core platform enhancements',
-    },
-    {
-      icon: 'group_add',
-      title: 'Team Expansion',
-      description: 'Engineering & growth',
-    },
-    {
-      icon: 'campaign',
-      title: 'Marketing',
-      description: 'Customer acquisition',
-    },
-    {
-      icon: 'settings',
-      title: 'Operations',
-      description: 'Infrastructure & support',
+      icon: 'psychology',
+      title: 'AI Forecasting Edge',
+      description: '95% accurate predictions vs manual guesswork',
     },
   ];
 
@@ -52,103 +29,44 @@ export const Slide5 = () => {
       <div className="h-[70px] flex items-center px-[60px]" style={{ borderBottom: '2px solid rgba(68, 181, 75, 0.1)', flexShrink: 0 }}>
         <div className="flex items-center gap-3">
           <i className="material-icons text-3xl" style={{ color: '#44B54B' }}>
-            rocket_launch
+            star
           </i>
           <h1 className="title-font font-bold" style={{ fontSize: '24px', color: '#44B54B', letterSpacing: '-0.5px' }}>
-            The Ask
+            Competitive Landscape
           </h1>
         </div>
       </div>
 
-      <div className="flex-grow flex flex-col justify-center px-[60px] py-8">
-        <div className="mb-8 max-w-3xl">
-          <h2 className="text-3xl font-semibold mb-3" style={{ color: '#333' }}>
-            Seed Funding to Reach Product-Market Fit
+      <div className="flex-grow flex flex-col justify-center px-[60px] py-10">
+        <div className="mb-10 max-w-4xl">
+          <h2 className="text-3xl font-semibold mb-4" style={{ color: '#333' }}>
+            Built Specifically for Micro-Businesses
           </h2>
-          <p className="text-lg font-light" style={{ color: '#666' }}>
-            18-month runway to achieve market traction and scale
+          <p className="text-lg font-light leading-relaxed" style={{ color: '#666' }}>
+            AI predictive inventory analytics with <span className="font-semibold" style={{ color: '#44B54B' }}>
+              95% accuracy
+            </span>
+            , tailored for small retailers
           </p>
         </div>
 
-        <div className="flex gap-10 mb-8">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-4">
-              <i className="material-icons text-2xl" style={{ color: '#44B54B' }}>
-                payments
-              </i>
-              <h3 className="text-xl font-semibold" style={{ color: '#333' }}>
-                Funding
-              </h3>
-            </div>
-            <div className="flex items-baseline gap-2 mb-2">
-              <div className="title-font font-black" style={{ fontSize: '56px', color: '#44B54B', lineHeight: 1, letterSpacing: '-2px' }}>
-                $500K
+        <div className="grid grid-cols-4 gap-6">
+          {advantages.map((item, idx) => (
+            <div key={idx} className="flex flex-col">
+              <div className="mb-4">
+                <i className="material-icons" style={{ fontSize: '44px', color: '#44B54B' }}>
+                  {item.icon}
+                </i>
               </div>
-            </div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-14 h-1 rounded-full" style={{ background: '#44B54B' }}></div>
-              <span className="text-lg font-medium" style={{ color: '#666' }}>
-                – $750K
-              </span>
-            </div>
-            <p className="text-base font-light" style={{ color: '#999' }}>
-              18-month runway
-            </p>
-          </div>
-
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-4">
-              <i className="material-icons text-2xl" style={{ color: '#44B54B' }}>
-                pie_chart
-              </i>
-              <h3 className="text-xl font-semibold" style={{ color: '#333' }}>
-                Use of Funds
+              <h3 className="text-lg font-semibold mb-2" style={{ color: '#333' }}>
+                {item.title}
               </h3>
+              <div className="w-12 h-1 mb-3 rounded-full" style={{ background: '#44B54B' }}></div>
+              <p className="text-base font-light leading-relaxed" style={{ color: '#666' }}>
+                {item.description}
+              </p>
             </div>
-            <div className="space-y-3">
-              {fundingItems.map((item, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <i className="material-icons text-lg mt-0.5" style={{ color: '#44B54B' }}>
-                    {item.icon}
-                  </i>
-                  <div>
-                    <p className="text-base font-medium" style={{ color: '#333' }}>
-                      {item.title}
-                    </p>
-                    <p className="text-sm font-light" style={{ color: '#999' }}>
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <i className="material-icons text-2xl" style={{ color: '#44B54B' }}>
-              flag
-            </i>
-            <h3 className="text-xl font-semibold" style={{ color: '#333' }}>
-              18-Month Milestones
-            </h3>
-          </div>
-          <div className="grid grid-cols-4 gap-4">
-            {milestones.map((milestone, idx) => (
-              <div key={idx} className="p-4 rounded-xl" style={{ background: 'rgba(68, 181, 75, 0.02)', borderLeft: '4px solid #44B54B' }}>
-                <p className="title-font font-bold text-2xl mb-1" style={{ color: '#44B54B' }}>
-                  {milestone.quarter}
-                </p>
-                <p className="text-base font-semibold mb-1" style={{ color: '#333' }}>
-                  {milestone.title}
-                </p>
-                <p className="text-sm font-light" style={{ color: '#666' }}>
-                  {milestone.description}
-                </p>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
     </div>
