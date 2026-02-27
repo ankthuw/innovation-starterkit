@@ -195,9 +195,12 @@ When you're ready, click **"Generate Appraisal"** to generate the full qualitati
     setMessages((prev) => [...prev, aiMessage]);
 
     try {
-      // Increase timeout for full appraisal generation (comprehensive prompt takes longer)
-      const isFullAppraisalGeneration = contentToSend.includes("Generate comprehensive investment appraisal");
-      const timeout = isFullAppraisalGeneration ? 300000 : undefined; // 5 minutes for full appraisal
+      // Increase timeout for full appraisal generation and complex refinements (comprehensive prompts take longer)
+      const isComplexRequest = contentToSend.includes("Generate comprehensive investment appraisal") ||
+                              contentToSend.toLowerCase().includes("refine") ||
+                              contentToSend.toLowerCase().includes("business model") ||
+                              contentToSend.toLowerCase().includes("update");
+      const timeout = isComplexRequest ? 300000 : undefined; // 5 minutes for complex requests
 
       await streamChatResponse(
         "/api/assistant/investment-appraisal",

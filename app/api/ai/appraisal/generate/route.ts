@@ -43,7 +43,7 @@ Brief: ${idea.brief || "N/A"}`;
     const response = await sendClaudeMessage<any>(
       messages,
       SIMPLIFIED_APPRAISAL_PROMPT,
-      8000
+      16000
     );
 
     if (!response.success || !response.data) {

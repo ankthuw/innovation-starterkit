@@ -63,6 +63,88 @@ export interface ClaudeMessageWithThinking extends ClaudeMessage {
 }
 
 /**
+ * Repairs malformed JSON that AI models sometimes produce
+ * Handles missing quotes, trailing commas, unescaped quotes, etc.
+ */
+function repairMalformedJson(jsonString: string): string {
+  let repaired = jsonString;
+
+  // Fix unquoted property values that extend until the next quoted key (multiline)
+  // Pattern: "key": unquoted value\n"nextKey": -> "key": "unquoted value",\n"nextKey":
+  // This handles values that contain commas, periods, parentheses, etc.
+  repaired = repaired.replace(
+    /("[\w-]+")\s*:\s*([a-zA-Z][^\n]*?)\s*(?=\n\s*"[a-zA-Z])/g,
+    (match, key, value) => {
+      // Trim trailing whitespace from value
+      const trimmed = value.trim();
+      return `${key}: "${trimmed}",`;
+    }
+  );
+
+  // Fix trailing commas before closing brackets/braces
+  repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+
+  // Fix truncated JSON - close any open arrays or objects
+  // Count opening vs closing brackets and braces
+  const openBraces = (repaired.match(/\{/g) || []).length;
+  const closeBraces = (repaired.match(/\}/g) || []).length;
+  const openBrackets = (repaired.match(/\[/g) || []).length;
+  const closeBrackets = (repaired.match(/\]/g) || []).length;
+
+  // Add missing closing braces
+  for (let i = 0; i < openBraces - closeBraces; i++) {
+    repaired += '}';
+  }
+  // Add missing closing brackets
+  for (let i = 0; i < openBrackets - closeBrackets; i++) {
+    repaired += ']';
+  }
+
+  return repaired;
+}
+
+/**
+ * Attempt multiple repair strategies for malformed JSON
+ */
+function tryRepairJson(jsonString: string, attempt: number): string {
+  let repaired = jsonString;
+
+  switch (attempt) {
+    case 1:
+      // Main repair strategy - fix unquoted values extending to next key
+      repaired = repairMalformedJson(jsonString);
+      break;
+
+    case 2:
+      // More aggressive - handle unquoted values that end with newline
+      repaired = jsonString.replace(
+        /("[\w-]+")\s*:\s*([a-zA-Z][^\n]*?)\s*\n/g,
+        (match, key, value) => {
+          const trimmed = value.trim();
+          return `${key}: "${trimmed}"\n`;
+        }
+      );
+      repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+      break;
+
+    case 3:
+      // Fallback - try to fix values that might end at closing bracket/brace
+      // This is for cases where the value is followed by comma or closing bracket
+      repaired = jsonString.replace(
+        /("[\w-]+")\s*:\s*([a-zA-Z][^,\]}]*?)([,\]}])/g,
+        '$1: "$2"$3'
+      );
+      repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+      break;
+
+    default:
+      return jsonString;
+  }
+
+  return repaired;
+}
+
+/**
  * Send a message (non-streaming) - compatibility wrapper
  */
 export async function sendClaudeMessage<T = unknown>(
@@ -124,6 +206,28 @@ export async function sendClaudeMessage<T = unknown>(
       console.error("Failed to parse JSON from response:", parseError);
       console.error("Response text:", content.slice(0, 500));
       console.error("Extracted text:", textToParse.slice(0, 500));
+
+      // Try to repair malformed JSON with multiple strategies
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        console.log(`[JSON Repair] Attempt ${attempt}: Trying to repair malformed JSON...`);
+        try {
+          const repaired = tryRepairJson(textToParse, attempt);
+          console.log(`[JSON Repair] Attempt ${attempt} repaired JSON:`, repaired.slice(0, 500));
+          const jsonData = JSON.parse(repaired);
+          console.log(`[JSON Repair] Attempt ${attempt} successfully parsed repaired JSON`);
+          return { success: true, data: jsonData as T };
+        } catch (repairError) {
+          console.error(`[JSON Repair] Attempt ${attempt} failed:`, repairError);
+          if (attempt === 3) {
+            console.error("[JSON Repair] All repair attempts failed");
+            return {
+              success: false,
+              error: "Failed to parse response as JSON. The AI returned text instead of valid JSON.",
+            };
+          }
+        }
+      }
+
       return {
         success: false,
         error: "Failed to parse response as JSON. The AI returned text instead of valid JSON.",
