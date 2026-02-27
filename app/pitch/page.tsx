@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSession, setStep, savePitchDeck, getConversationHistory, saveConversationHistory, clearSession } from "@/lib/session";
 import { exportSessionToPDF } from "@/lib/export-pdf";
 import { DEMO_PITCH_DECK } from "@/lib/demo-data";
+import { mapSlideToStyledProps } from "@/lib/pitch-slide-mapping";
 import type { PitchDeck, Challenge, MarketAnalysis, BusinessIdea, DetailedIdeaMetrics, ChatMessage } from "@/types/innovation";
 import { PhaseLayout } from "@/components/wizard";
 import { PhaseChat } from "@/components/chat";
@@ -189,20 +190,24 @@ interface SlideViewerProps {
   onNextSlide: () => void;
   onSelectSlide: (index: number) => void;
   useDemoSlides: boolean; // New prop to indicate demo mode
+  useStyledView: boolean; // New prop to toggle between styled and simple view
+  onToggleStyledView: () => void; // New prop to handle toggle
 }
 
-// Map slide index to slide component (for demo mode)
+// Map slide index to slide component (for demo mode and styled view)
+// Note: Slide5 and Slide6 are swapped to match AI-generated data order
+// Slide5 = Competitive Landscape, Slide6 = Business Model
 const slideComponents = [
   Slide1,
   Slide2,
   Slide3,
   Slide4,
-  Slide5,
-  Slide6,
+  Slide6, // Index 4: Business Model
+  Slide5, // Index 5: Competitive Landscape
   Slide7,
 ];
 
-function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlide, onSelectSlide, useDemoSlides }: SlideViewerProps) {
+function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlide, onSelectSlide, useDemoSlides, useStyledView, onToggleStyledView }: SlideViewerProps) {
   // Determine slide count and display based on mode
   const slideCount = useDemoSlides ? slideComponents.length : pitchDeck.slides.length;
   const isLastSlide = currentSlideIndex === slideCount - 1;
@@ -214,13 +219,26 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
           <div className="h-10 w-10 rounded-md bg-gradient-to-br from-slate-700 to-slate-800 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center border border-slate-600 dark:border-slate-500">
             <Presentation className="h-5 w-5 text-slate-100" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{pitchDeck.title}</h1>
             <p className="text-sm text-slate-600 dark:text-slate-400">{pitchDeck.tagline}</p>
-            {useDemoSlides && (
-              <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">Demo Mode</span>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              {useDemoSlides && (
+                <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">Demo Mode</span>
+              )}
+            </div>
           </div>
+          {!useDemoSlides && (
+            <Button
+              variant={useStyledView ? "default" : "outline"}
+              size="sm"
+              onClick={onToggleStyledView}
+              className="flex items-center gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              {useStyledView ? "Styled View" : "Simple View"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -259,8 +277,15 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
                 const CurrentSlideComponent = slideComponents[currentSlideIndex] || Slide1;
                 return <CurrentSlideComponent />;
               })()
+            ) : useStyledView ? (
+              // Normal mode with styled view: Map AI data to styled components
+              (() => {
+                const CurrentSlideComponent = slideComponents[currentSlideIndex] || Slide1;
+                const styledProps = mapSlideToStyledProps(pitchDeck.slides[currentSlideIndex], pitchDeck);
+                return styledProps ? <CurrentSlideComponent {...styledProps} /> : <CurrentSlideComponent />;
+              })()
             ) : (
-              // Normal mode: Dynamic rendering from pitchDeck
+              // Normal mode: Simple dynamic rendering from pitchDeck
               <div className="absolute inset-0 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-10 flex flex-col">
                 <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
                   <div className="mb-3">
@@ -455,6 +480,7 @@ export default function PitchPage() {
   const [isReviewSummaryExpanded, setIsReviewSummaryExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [useDemoSlides, setUseDemoSlides] = useState(false); // Track if using static demo slides
+  const [useStyledView, setUseStyledView] = useState(false); // Track if using styled view for AI-generated content
 
   // Use shared phase state hook
   const {
@@ -1050,6 +1076,8 @@ export default function PitchPage() {
                 onNextSlide={nextSlide}
                 onSelectSlide={setCurrentSlideIndex}
                 useDemoSlides={useDemoSlides}
+                useStyledView={useStyledView}
+                onToggleStyledView={() => setUseStyledView(!useStyledView)}
               />
             )}
           </div>

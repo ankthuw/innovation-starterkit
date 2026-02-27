@@ -5,4 +5,3 @@ export { Slide4 } from './Slide4';
 export { Slide5 } from './Slide5';
 export { Slide6 } from './Slide6';
 export { Slide7 } from './Slide7';
-export { PitchPlayground } from './Playground';

@@ -1,35 +1,79 @@
 'use client';
 
-export const Slide6 = () => {
-  const plans = [
-    {
-      name: 'Basic',
-      price: '$49',
-      recommended: false,
-      features: ['5 users', 'AI forecasting', 'Basic analytics', 'Email support', '1 POS integration'],
+interface PricingPlan {
+  name: string;
+  price: string;
+  recommended?: boolean;
+  features: string[];
+}
+
+interface RevenueStream {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface Slide6Props {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  revenueStreams?: RevenueStream[];
+  pricing?: string;
+  plans?: PricingPlan[];
+}
+
+const DEFAULT_REVENUE_STREAMS: RevenueStream[] = [
+  { icon: 'subscriptions', title: 'Monthly Subscription', description: 'Core recurring revenue' },
+  { icon: 'percent', title: '1.5% Transaction Fee', description: 'On processed orders' },
+  { icon: 'support_agent', title: 'Premium Support', description: 'Priority assistance plans' },
+  { icon: 'api', title: 'API Access', description: 'Custom integrations' },
+];
+
+const DEFAULT_PLANS: PricingPlan[] = [
+  {
+    name: 'Basic',
+    price: '$49',
+    recommended: false,
+    features: ['5 users', 'AI forecasting', 'Basic analytics', 'Email support', '1 POS integration'],
+  },
+  {
+    name: 'Professional',
+    price: '$149',
+    recommended: true,
+    features: ['25 users', 'Advanced AI insights', 'Full analytics suite', 'Priority support', '5 integrations', 'Custom reports'],
+  },
+  {
+    name: 'Enterprise',
+    price: '$499',
+    recommended: false,
+    features: ['Unlimited users', 'White-label solution', 'Custom AI models', 'Dedicated support', 'Unlimited integrations'],
+  },
+];
+
+const ICONS = ['subscriptions', 'percent', 'support_agent', 'api', 'payments', 'credit_card', 'receipt', 'account_balance'];
+
+export const Slide6 = ({
+  title = 'Business Model',
+  subtitle = 'Scalable SaaS Revenue Model',
+  description = 'B2B SaaS subscription with multiple recurring revenue streams',
+  revenueStreams = DEFAULT_REVENUE_STREAMS,
+  pricing = 'Tiered pricing: Basic $49/month, Professional $149/month, Enterprise $499/month',
+  plans = DEFAULT_PLANS
+}: Slide6Props) => {
+  const getPlanStyle = (recommended?: boolean) => {
+    if (recommended) {
+      return {
+        priceColor: '#1399FF',
+        borderColor: '#1399FF',
+        bgColor: 'rgba(19, 153, 255, 0.03)',
+      };
+    }
+    return {
       priceColor: '#44B54B',
       borderColor: 'rgba(68, 181, 75, 0.15)',
       bgColor: 'rgba(68, 181, 75, 0.02)',
-    },
-    {
-      name: 'Professional',
-      price: '$149',
-      recommended: true,
-      features: ['25 users', 'Advanced AI insights', 'Full analytics suite', 'Priority support', '5 integrations', 'Custom reports'],
-      priceColor: '#1399FF',
-      borderColor: '#1399FF',
-      bgColor: 'rgba(19, 153, 255, 0.03)',
-    },
-    {
-      name: 'Enterprise',
-      price: '$499',
-      recommended: false,
-      features: ['Unlimited users', 'White-label solution', 'Custom AI models', 'Dedicated support', 'Unlimited integrations'],
-      priceColor: '#44B54B',
-      borderColor: 'rgba(68, 181, 75, 0.15)',
-      bgColor: 'rgba(68, 181, 75, 0.02)',
-    },
-  ];
+    };
+  };
 
   return (
     <div className="ppt-slide h-[720px] flex flex-col" style={{ background: '#FEFEFE' }}>
@@ -39,7 +83,7 @@ export const Slide6 = () => {
             account_balance_wallet
           </i>
           <h1 className="title-font font-bold" style={{ fontSize: '24px', color: '#44B54B', letterSpacing: '-0.5px' }}>
-            Business Model
+            {title}
           </h1>
         </div>
       </div>
@@ -47,99 +91,65 @@ export const Slide6 = () => {
       <div className="flex-grow flex flex-col justify-center px-[60px] py-8">
         <div className="mb-8 max-w-3xl">
           <h2 className="text-3xl font-semibold mb-3" style={{ color: '#333' }}>
-            Scalable SaaS Revenue Model
+            {subtitle}
           </h2>
           <p className="text-lg font-light leading-relaxed" style={{ color: '#666' }}>
-            B2B SaaS subscription with multiple recurring revenue streams
+            {description}
           </p>
         </div>
 
-        <div className="flex gap-6 mb-8">
-          <div className="flex items-start gap-2">
-            <i className="material-icons text-xl" style={{ color: '#44B54B' }}>
-              subscriptions
-            </i>
-            <div>
-              <p className="text-base font-semibold" style={{ color: '#333' }}>
-                Monthly Subscription
-              </p>
-              <p className="text-sm font-light" style={{ color: '#999' }}>
-                Core recurring revenue
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <i className="material-icons text-xl" style={{ color: '#44B54B' }}>
-              percent
-            </i>
-            <div>
-              <p className="text-base font-semibold" style={{ color: '#333' }}>
-                1.5% Transaction Fee
-              </p>
-              <p className="text-sm font-light" style={{ color: '#999' }}>
-                On processed orders
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <i className="material-icons text-xl" style={{ color: '#44B54B' }}>
-              support_agent
-            </i>
-            <div>
-              <p className="text-base font-semibold" style={{ color: '#333' }}>
-                Premium Support
-              </p>
-              <p className="text-sm font-light" style={{ color: '#999' }}>
-                Priority assistance plans
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <i className="material-icons text-xl" style={{ color: '#44B54B' }}>
-              api
-            </i>
-            <div>
-              <p className="text-base font-semibold" style={{ color: '#333' }}>
-                API Access
-              </p>
-              <p className="text-sm font-light" style={{ color: '#999' }}>
-                Custom integrations
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          {plans.map((plan) => (
-            <div key={plan.name} className="flex-1 flex flex-col p-5 rounded-xl relative" style={{ background: plan.bgColor, border: `2px solid ${plan.borderColor}` }}>
-              {plan.recommended && (
-                <div
-                  className="absolute -top-2 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold tracking-wide"
-                  style={{ background: '#1399FF', color: 'white' }}
-                >
-                  RECOMMENDED
-                </div>
-              )}
-              <p className="text-lg font-semibold mb-1" style={{ color: '#333' }}>
-                {plan.name}
-              </p>
-              <div className="flex items-baseline gap-1 mb-3">
-                <div className="title-font font-black" style={{ fontSize: '40px', color: plan.priceColor, lineHeight: 1 }}>
-                  {plan.price}
-                </div>
-                <div className="text-base font-light" style={{ color: '#999' }}>
-                  /month
-                </div>
-              </div>
-              <div className="space-y-2 flex-grow">
-                {plan.features.map((feature, idx) => (
-                  <p key={idx} style={{ color: '#666' }} className="text-sm">
-                    • {feature}
-                  </p>
-                ))}
+        <div className="flex gap-6 mb-8 flex-wrap">
+          {revenueStreams.slice(0, 4).map((stream, idx) => (
+            <div key={idx} className="flex items-start gap-2">
+              <i className="material-icons text-xl" style={{ color: '#44B54B' }}>
+                {stream.icon}
+              </i>
+              <div>
+                <p className="text-base font-semibold" style={{ color: '#333' }}>
+                  {stream.title}
+                </p>
+                <p className="text-sm font-light" style={{ color: '#999' }}>
+                  {stream.description}
+                </p>
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="flex gap-4">
+          {plans.slice(0, 3).map((plan) => {
+            const style = getPlanStyle(plan.recommended);
+            return (
+              <div key={plan.name} className="flex-1 flex flex-col p-5 rounded-xl relative" style={{ background: style.bgColor, border: `2px solid ${style.borderColor}` }}>
+                {plan.recommended && (
+                  <div
+                    className="absolute -top-2 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold tracking-wide"
+                    style={{ background: '#1399FF', color: 'white' }}
+                  >
+                    RECOMMENDED
+                  </div>
+                )}
+                <p className="text-lg font-semibold mb-1" style={{ color: '#333' }}>
+                  {plan.name}
+                </p>
+                <div className="flex items-baseline gap-1 mb-3">
+                  <div className="title-font font-black" style={{ fontSize: '40px', color: style.priceColor, lineHeight: 1 }}>
+                    {plan.price}
+                  </div>
+                  <div className="text-base font-light" style={{ color: '#999' }}>
+                    /month
+                  </div>
+                </div>
+                <div className="space-y-2 flex-grow">
+                  {plan.features.slice(0, 6).map((feature, idx) => (
+                    <p key={idx} style={{ color: '#666' }} className="text-sm">
+                      • {feature}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
