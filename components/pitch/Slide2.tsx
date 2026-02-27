@@ -74,17 +74,33 @@ export const Slide2 = ({
                   </i>
                 </div>
               )}
-              <div className="title-font font-black mb-3" style={{ fontSize: '72px', color: '#44B54B', lineHeight: 1, letterSpacing: '-2px' }}>
-                {stat.value}
-              </div>
-              <div className="w-14 h-1 mb-3 rounded-full" style={{ background: '#44B54B' }}></div>
-              <p className="text-base font-medium" style={{ color: '#333' }}>
-                {stat.label}
-              </p>
-              {stat.sublabel && (
-                <p className="text-sm font-light mt-1" style={{ color: '#999' }}>
-                  {stat.sublabel}
-                </p>
+              {stat.value ? (
+                <>
+                  <div className="title-font font-black mb-3" style={{ fontSize: '72px', color: '#44B54B', lineHeight: 1, letterSpacing: '-2px' }}>
+                    {stat.value}
+                  </div>
+                  <div className="w-14 h-1 mb-3 rounded-full" style={{ background: '#44B54B' }}></div>
+                  <p className="text-base font-medium" style={{ color: '#333' }}>
+                    {stat.label}
+                  </p>
+                  {stat.sublabel && (
+                    <p className="text-sm font-light mt-1" style={{ color: '#999' }}>
+                      {stat.sublabel}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-lg font-semibold mb-3" style={{ color: '#333', lineHeight: 1.2 }}>
+                    {stat.label}
+                  </p>
+                  <div className="w-14 h-1 mb-3 rounded-full" style={{ background: '#44B54B' }}></div>
+                  {stat.sublabel && (
+                    <p className="text-sm font-light mt-1" style={{ color: '#999' }}>
+                      {stat.sublabel}
+                    </p>
+                  )}
+                </>
               )}
             </div>
           ))}

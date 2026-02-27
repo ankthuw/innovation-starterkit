@@ -126,19 +126,40 @@ function parseStat(text: string, index: number): { value: string; label: string;
   if (!text) return null;
 
   const icons = ['edit_note', 'trending_down', 'payments', 'showchart', 'inventory_2', 'warning'];
-  const match = text.match(/^([\d.$%]+[BM%]?)\s+(.+)/);
 
-  if (match) {
-    const { title, description } = splitTitleDescription(match[2], 25);
-    return {
-      value: match[1],
-      label: title,
-      sublabel: description,
-      icon: icons[index % icons.length]
-    };
+  // Try various patterns for extracting value
+  const patterns = [
+    /^([\d.$%]+[BM%]?)\s+(.+)/, // "73% of households..."
+    /^(\d+\s+in\s+\d+)\s+(.+)/i, // "1 in 3 parents..."
+    /^(Parents spend|[\w\s]+)\s+(an average of|approximately)\s+([\d.]+)\s*(minutes?|hours?|days?)?\s+(.+)/i, // "Parents spend an average of 45 minutes..."
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      // For pattern 1 and 2: value is at index 1, description at index 2
+      // For pattern 3: value is at index 3, description at index 4
+      const value = pattern.source.includes('Parents spend') ? match[3] + (match[4] ? ` ${match[4]}` : '') : match[1];
+      const description = pattern.source.includes('Parents spend') ? match[4] || '' : match[2];
+
+      const { title, description: sublabel } = splitTitleDescription(description, 30);
+      return {
+        value: value,
+        label: title || description.substring(0, 35),
+        sublabel: sublabel,
+        icon: icons[index % icons.length]
+      };
+    }
   }
 
-  return null;
+  // Fallback: create a stat object without a clear value
+  const { title, description } = splitTitleDescription(text, 35);
+  return {
+    value: '',
+    label: title || text.substring(0, 35),
+    sublabel: description,
+    icon: icons[index % icons.length]
+  };
 }
 
 /**
