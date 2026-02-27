@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const generationResponse = await sendClaudeMessage<GeneratedIdea[]>(
       generationMessages,
       IDEATION_PROMPT,
-      8000
+      16000
     );
 
     if (!generationResponse.success) {
