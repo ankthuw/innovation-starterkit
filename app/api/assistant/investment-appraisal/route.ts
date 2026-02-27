@@ -249,7 +249,7 @@ Financial Model:
         let inJsonBlock = false;
         let jsonBlockStart = -1;
 
-        for await (const chunk of streamClaudeMessage(messages, systemPrompt)) {
+        for await (const chunk of streamClaudeMessage(messages, systemPrompt, 16384)) {
           fullResponse += chunk;
 
           // Check for JSON code block start (```json or ```)
