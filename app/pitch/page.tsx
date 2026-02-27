@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSession, setStep, savePitchDeck, getConversationHistory, saveConversationHistory, clearSession } from "@/lib/session";
 import { exportSessionToPDF } from "@/lib/export-pdf";
 import { DEMO_PITCH_DECK } from "@/lib/demo-data";
-import { mapSlideToStyledProps } from "@/lib/pitch-slide-mapping";
+import { mapSlideByIndexToStyledProps } from "@/lib/pitch-slide-mapping";
 import type { PitchDeck, Challenge, MarketAnalysis, BusinessIdea, DetailedIdeaMetrics, ChatMessage } from "@/types/innovation";
 import { PhaseLayout } from "@/components/wizard";
 import { PhaseChat } from "@/components/chat";
@@ -281,7 +281,7 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
               // Normal mode with styled view: Map AI data to styled components
               (() => {
                 const CurrentSlideComponent = slideComponents[currentSlideIndex] || Slide1;
-                const styledProps = mapSlideToStyledProps(pitchDeck.slides[currentSlideIndex], pitchDeck);
+                const styledProps = mapSlideByIndexToStyledProps(pitchDeck.slides[currentSlideIndex], currentSlideIndex, pitchDeck);
                 return styledProps ? <CurrentSlideComponent {...styledProps} /> : <CurrentSlideComponent />;
               })()
             ) : (

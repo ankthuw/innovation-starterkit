@@ -11,10 +11,16 @@ import type { PitchDeck, PitchSlide } from '@/types/innovation';
 function splitTitleDescription(text: string, defaultTitleLength = 35): { title: string; description: string } {
   if (!text) return { title: '', description: '' };
 
-  // Try common patterns first
+  // Try colon as primary delimiter (e.g., "Title: Description")
+  const colonMatch = text.match(/^(.+?)[:：]\s*(.+)$/);
+  if (colonMatch) {
+    return { title: colonMatch[1].trim(), description: colonMatch[2].trim() };
+  }
+
+  // Try common patterns
   const patterns = [
-    /^(.+?)\s+(?:with|and|for|to)\s+(.+)/i, // "Title with description"
     /^(.+?)\s+-\s+(.+)/, // "Title - description"
+    /^(.+?)\s+(?:with|and|for|to)\s+(.+)/i, // "Title with description"
     /^(.{10,40}?)\s+(.+)/, // Split at word boundary
   ];
 
@@ -152,17 +158,37 @@ export function mapTitleSlide(slide: PitchSlide, pitchDeck: PitchDeck) {
  */
 export function mapProblemSlide(slide: PitchSlide) {
   const content = slide.content;
+
+  // Parse stats - capture all bullets, not just ones matching the pattern
   const stats = Array.isArray(content.stats)
-    ? (content.stats as string[]).map((s, i) => parseStat(s, i)).filter((s): s is NonNullable<typeof s> => s !== null)
+    ? (content.stats as string[]).map((s, i) => {
+        const parsed = parseStat(s, i);
+        if (parsed) return parsed;
+        // Fallback: create a stat object even if pattern doesn't match
+        const icons = ['edit_note', 'trending_down', 'payments', 'showchart', 'inventory_2', 'warning'];
+        return {
+          value: s.substring(0, 20),
+          label: s.substring(0, 40),
+          sublabel: s.length > 40 ? s.substring(40) : '',
+          icon: icons[i % icons.length]
+        };
+      })
     : undefined;
+
+  // Concatenate problem and impact for full description
+  const parts: string[] = [];
+  if (content.problem && typeof content.problem === 'string') parts.push(content.problem);
+  if (content.impact && typeof content.impact === 'string') parts.push(content.impact);
+  if (content.description && typeof content.description === 'string') parts.push(content.description);
+
+  const description = parts.length > 0
+    ? parts.join('\n\n')
+    : Object.values(content).find(v => typeof v === 'string') as string || '';
 
   return {
     title: slide.title,
     subtitle: slide.title,
-    description: (content.problem as string) ||
-                 (content.impact as string) ||
-                 (content.description as string) ||
-                 Object.values(content).find(v => typeof v === 'string') as string || '',
+    description,
     stats,
   };
 }
@@ -241,30 +267,29 @@ export function mapBusinessModelSlide(slide: PitchSlide) {
   const pricingText = content.pricing as string || '';
   const plans: any[] = [];
 
-  // Parse pricing tiers
-  if (pricingText.includes('Basic') && pricingText.includes('$49')) {
-    plans.push({
-      name: 'Basic',
-      price: '$49',
-      recommended: false,
-      features: ['Essential features', 'Basic support', 'Core functionality'],
-    });
-  }
-  if (pricingText.includes('Professional') && pricingText.includes('$149')) {
-    plans.push({
-      name: 'Professional',
-      price: '$149',
-      recommended: true,
-      features: ['Advanced features', 'Priority support', 'Full functionality'],
-    });
-  }
-  if (pricingText.includes('Enterprise') && pricingText.includes('$499')) {
-    plans.push({
-      name: 'Enterprise',
-      price: '$499',
-      recommended: false,
-      features: ['Custom features', 'Dedicated support', 'White-label options'],
-    });
+  // Only parse pricing tiers if we have clear evidence of tiered structure
+  // Look for multiple price points with plan names
+  const priceMatches = pricingText.match(/(\w+)\s*(?:at|for|-|\$)\s*\$?([\d.]+)/gi);
+  if (priceMatches && priceMatches.length >= 2) {
+    // We have multiple pricing tiers, parse them
+    const seenNames = new Set<string>();
+    for (const match of priceMatches.slice(0, 3)) {
+      const planMatch = match.match(/(\w+)\s*(?:at|for|-|\$)\s*\$?([\d.]+)/i);
+      if (planMatch) {
+        const name = planMatch[1].trim();
+        const price = `$${planMatch[2].trim()}`;
+        // Skip duplicates
+        if (!seenNames.has(name) && name.length > 2 && name.length < 20) {
+          seenNames.add(name);
+          plans.push({
+            name: name.charAt(0).toUpperCase() + name.slice(1),
+            price: price,
+            recommended: plans.length === 0,
+            features: [`Tier features`],
+          });
+        }
+      }
+    }
   }
 
   return {
@@ -275,7 +300,7 @@ export function mapBusinessModelSlide(slide: PitchSlide) {
                  Object.values(content).find(v => typeof v === 'string') as string || '',
     revenueStreams,
     pricing: pricingText,
-    plans: plans.length > 0 ? plans : undefined,
+    plans: plans.length >= 2 ? plans : undefined, // Only show plans if we have at least 2 tiers
   };
 }
 
@@ -335,7 +360,52 @@ export function mapAskSlide(slide: PitchSlide) {
 }
 
 /**
+ * Main mapping function - maps slide by index to styled component props
+ * This is used for styled view where components are in a specific order
+ */
+export function mapSlideByIndexToStyledProps(slide: PitchSlide, index: number, pitchDeck: PitchDeck) {
+  // Fixed titles for each slide position
+  const FIXED_TITLES = [
+    'Pitch Deck',           // Index 0: Slide1
+    'The Problem',          // Index 1: Slide2
+    'Our Solution',         // Index 2: Slide3
+    'Market Opportunity',   // Index 3: Slide4
+    'Business Model',       // Index 4: Slide6 (Business Model)
+    'Competitive Landscape',// Index 5: Slide5 (Competition)
+    'The Ask',              // Index 6: Slide7
+  ];
+
+  // Components are ordered: Slide1, Slide2, Slide3, Slide4, Slide6(BizModel), Slide5(Comp), Slide7
+  const fixedTitle = FIXED_TITLES[index] || slide.title;
+
+  switch (index) {
+    case 0: // Slide1 - Title
+      return { ...mapTitleSlide(slide, pitchDeck), title: fixedTitle };
+    case 1: // Slide2 - Problem
+      return { ...mapProblemSlide(slide), title: fixedTitle };
+    case 2: // Slide3 - Solution
+      return { ...mapSolutionSlide(slide), title: fixedTitle };
+    case 3: // Slide4 - Market
+      // Check if content looks like market data (TAM/SAM/SOM) or business model data
+      if (slide.content.tam || slide.content.sam || slide.content.som) {
+        return { ...mapMarketSlide(slide), title: fixedTitle };
+      }
+      // Fallback: if no market data but has revenue content, show empty market
+      return { ...mapMarketSlide(slide), title: fixedTitle };
+    case 4: // Slide6 - Business Model
+      return { ...mapBusinessModelSlide(slide), title: fixedTitle };
+    case 5: // Slide5 - Competition
+      return { ...mapCompetitionSlide(slide), title: fixedTitle };
+    case 6: // Slide7 - Ask
+      return { ...mapAskSlide(slide), title: fixedTitle };
+    default:
+      return null;
+  }
+}
+
+/**
  * Main mapping function - maps any slide to its styled component props
+ * DEPRECATED: Use mapSlideByIndexToStyledProps for styled view instead
  */
 export function mapSlideToStyledProps(slide: PitchSlide, pitchDeck: PitchDeck) {
   switch (slide.type) {
