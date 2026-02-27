@@ -264,10 +264,10 @@ export async function* streamClaudeMessage(
 
   const stream = await openai.chat.completions.create({
     model: config.openai.defaultModel,
-    max_completion_tokens: maxTokens,
+    max_tokens: maxTokens,
     messages: openaiMessages,
     stream: true,
-    // Azure OpenAI doesn't support the 'thinking' parameter
+    thinking: { type: "disabled" } as any,  // Disable thinking for faster responses
   });
 
   for await (const chunk of stream) {
