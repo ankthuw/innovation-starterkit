@@ -127,7 +127,7 @@ export const Slide4 = ({
           <div>
             <p className="text-xl font-semibold mb-1" style={{ color: '#333' }}>
               <span className="title-font font-black" style={{ color: '#44B54B', fontSize: '32px' }}>
-                {parseGrowthRate(growthRate)}
+                {parseGrowthRate(growthRate) + '%'} 
               </span>{' '}
               Annual Growth
             </p>

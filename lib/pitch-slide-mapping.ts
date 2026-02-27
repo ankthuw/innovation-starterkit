@@ -385,19 +385,22 @@ export function mapAskSlide(slide: PitchSlide) {
  * This is used for styled view where components are in a specific order
  */
 export function mapSlideByIndexToStyledProps(slide: PitchSlide, index: number, pitchDeck: PitchDeck) {
-  // Fixed titles for each slide position
-  const FIXED_TITLES = [
-    'Pitch Deck',           // Index 0: Slide1
-    'The Problem',          // Index 1: Slide2
-    'Our Solution',         // Index 2: Slide3
-    'Market Opportunity',   // Index 3: Slide4
-    'Business Model',       // Index 4: Slide6 (Business Model)
-    'Competitive Landscape',// Index 5: Slide5 (Competition)
-    'The Ask',              // Index 6: Slide7
-  ];
+  // Fixed titles for each slide position (title slide uses pitchDeck.title)
+  const getTitle = (index: number) => {
+    if (index === 0) return slide.title || pitchDeck.title; // Title slide uses actual title
+    const FIXED_TITLES = [
+      '',                    // Index 0: handled above
+      'The Problem',          // Index 1: Slide2
+      'Our Solution',         // Index 2: Slide3
+      'Market Opportunity',   // Index 3: Slide4
+      'Business Model',       // Index 4: Slide6 (Business Model)
+      'Competitive Landscape',// Index 5: Slide5 (Competition)
+      'The Ask',              // Index 6: Slide7
+    ];
+    return FIXED_TITLES[index] || slide.title;
+  };
 
-  // Components are ordered: Slide1, Slide2, Slide3, Slide4, Slide6(BizModel), Slide5(Comp), Slide7
-  const fixedTitle = FIXED_TITLES[index] || slide.title;
+  const fixedTitle = getTitle(index);
 
   switch (index) {
     case 0: // Slide1 - Title
