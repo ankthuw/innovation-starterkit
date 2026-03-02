@@ -274,7 +274,7 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
               (() => {
                 const CurrentSlideComponent = slideComponents[currentSlideIndex] || Slide1;
                 const styledProps = mapSlideByIndexToStyledProps(pitchDeck.slides[currentSlideIndex], currentSlideIndex, pitchDeck);
-                return styledProps ? <CurrentSlideComponent {...styledProps} /> : <CurrentSlideComponent />;
+                return styledProps ? <CurrentSlideComponent {...styledProps} /> : <CurrentSlideComponent title={pitchDeck.slides[currentSlideIndex].title || "Untitled"} />;
               })()
             ) : (
               // Simple view: Show raw data from pitchDeck
