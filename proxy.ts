@@ -5,9 +5,10 @@ export async function proxy(request: NextRequest) {
   const isEvaluationPage = request.nextUrl.pathname === "/evaluation"
   const isEvaluationAPI = request.nextUrl.pathname.startsWith("/api/evaluation")
   const isRootRoute = request.nextUrl.pathname === "/"
+  const isAIAPI = request.nextUrl.pathname.startsWith("/api/ai") || request.nextUrl.pathname.startsWith("/api/assistant")
 
-  // Allow access to evaluation page, API, and root route
-  if (isEvaluationPage || isEvaluationAPI || isRootRoute) {
+  // Allow access to evaluation page, API, AI API routes, and root route
+  if (isEvaluationPage || isEvaluationAPI || isAIAPI || isRootRoute) {
     return NextResponse.next()
   }
 
