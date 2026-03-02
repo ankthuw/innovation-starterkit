@@ -42,13 +42,39 @@ function splitTitleDescription(text: string, defaultTitleLength = 35): { title: 
   return { title: text, description: '' };
 }
 
-// Helper to parse market size string (e.g., "$45B - Total Addressable Market...")
+// Helper to parse market size string
+// Handles formats like:
+// 1. "$45B - Total Addressable Market: US retail inventory software market..."
+// 2. "Global Retail Tech SaaS Market: $45B"
 function parseMarketSize(text: string): { value: string; description: string } {
   if (!text) return { value: '', description: '' };
 
+  // Format 2: "Label: $value" (label first, then value)
+  const labelFirstMatch = text.match(/^(.+?)[:：]\s*([\$€£]?\s*[\d.,]+[BMK]?\+?)\s*(.*)$/);
+  if (labelFirstMatch) {
+    return {
+      value: labelFirstMatch[2].trim(),
+      description: labelFirstMatch[1].trim()
+    };
+  }
+
+  // Format 1: "$value - Label: description..." (value first, dash separator)
   const match = text.match(/^([\d.$A-Z]+[BM]?)\s*-\s*(.+)$/);
   if (match) {
-    return { value: match[1].trim(), description: match[2].trim() };
+    const value = match[1].trim();
+    const fullDescription = match[2].trim();
+
+    // Remove the market name prefix (e.g., "Total Addressable Market: ")
+    // The description format is usually "Name: actual description"
+    const colonIndex = fullDescription.indexOf(':');
+    if (colonIndex !== -1 && colonIndex < 50) { // Only remove if colon is early in the string
+      return {
+        value,
+        description: fullDescription.substring(colonIndex + 1).trim()
+      };
+    }
+
+    return { value, description: fullDescription };
   }
 
   return { value: text, description: '' };
@@ -82,20 +108,22 @@ function parseMilestone(text: string, index: number): { quarter: string; title: 
 function parseFunding(text: string): { amount: string; range: string; description: string } {
   if (!text) return { amount: '$500K', range: '', description: '' };
 
-  // Extract amounts
-  const amountMatch = text.match(/\$[\d,.]+[KMB]?/gi);
+  // Extract amounts - specifically looks for currency symbols followed by numbers
+  // This avoids matching numbers like "18" in "18-month"
+  const amountMatch = text.match(/[\$€£]\s*[\d,.]+[KMB]?\b/gi);
   const amounts = amountMatch || [];
   const amount = amounts[0] || '$500K';
   const range = amounts[1] ? `– ${amounts[1]}` : '';
 
   // Remove amounts and common words to get description
-  const description = text
-    .replace(/\$[\d,.]+[KMB]?/gi, '')
-    .replace(/[-–]\s*\$[\d,.]+[KMB]?/gi, '')
-    .replace(/seed funding|funding|runway/gi, '')
+  let description = text
+    .replace(/[\$€£]\s*[\d,.]+[KMB]?\b/gi, '') // Remove currency amounts
+    .replace(/[-–]\s*[\$€£]\s*[\d,.]+[KMB]?\b/gi, '') // Remove " - $amount" patterns
+    .replace(/seed funding|funding/gi, '') // Remove funding keywords
+    .replace(/^(for|to|and|with)\s+/i, '') // Remove leading connector words
     .trim();
 
-  return { amount, range, description: description || 'Funding to reach product-market fit' };
+  return { amount, range, description: description || '18-month runway to product-market fit' };
 }
 
 // Helper to parse use of funds string (e.g., "$250K - Product development and MVP")
@@ -127,32 +155,112 @@ function parseStat(text: string, index: number): { value: string; label: string;
 
   const icons = ['edit_note', 'trending_down', 'payments', 'showchart', 'inventory_2', 'warning'];
 
-  // Try various patterns for extracting value
-  const patterns = [
-    /^([\d.$%]+[BM%]?)\s+(.+)/, // "73% of households..."
-    /^(\d+\s+in\s+\d+)\s+(.+)/i, // "1 in 3 parents..."
-    /^(Parents spend|[\w\s]+)\s+(an average of|approximately)\s+([\d.]+)\s*(minutes?|hours?|days?)?\s+(.+)/i, // "Parents spend an average of 45 minutes..."
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) {
-      // For pattern 1 and 2: value is at index 1, description at index 2
-      // For pattern 3: value is at index 3, description at index 4
-      const value = pattern.source.includes('Parents spend') ? match[3] + (match[4] ? ` ${match[4]}` : '') : match[1];
-      const description = pattern.source.includes('Parents spend') ? match[4] || '' : match[2];
-
-      const { title, description: sublabel } = splitTitleDescription(description, 30);
-      return {
-        value: value,
-        label: title || description.substring(0, 35),
-        sublabel: sublabel,
-        icon: icons[index % icons.length]
-      };
-    }
+  // Pattern 1: "X% of [subject] [verb phrase]" - percentage at start
+  // Example: "73% of small businesses still use manual inventory methods"
+  const percentMatch = text.match(/^([\d.]+%)\s+(.+?)\s+(?:use|still use|prefer|rely on|struggle with)\s+(.+)$/i);
+  if (percentMatch) {
+    return {
+      value: percentMatch[1],
+      label: percentMatch[3].trim(),
+      sublabel: percentMatch[2].trim(),
+      icon: icons[index % icons.length]
+    };
   }
 
-  // Fallback: create a stat object without a clear value
+  // Pattern 1b: "X% of [full sentence]" - percentage at start, simple split
+  // Example: "73% of households experience food insecurity"
+  const percentSimpleMatch = text.match(/^([\d.]+%)\s+(.+)$/);
+  if (percentSimpleMatch) {
+    const { title, description } = splitTitleDescription(percentSimpleMatch[2], 30);
+    return {
+      value: percentSimpleMatch[1],
+      label: title || percentSimpleMatch[2].substring(0, 30),
+      sublabel: description || '',
+      icon: icons[index % icons.length]
+    };
+  }
+
+  // Pattern 2: "[Subject] cost [target] an estimated $value [frequency]"
+  // Example: "Stockouts cost retailers an estimated $45B annually"
+  const costEstimatedMatch = text.match(/^(.+?)\s+(?:cost|costs)\s+(.+?)\s+an estimated\s+(\$?[\d.,]+[BMK%]?\+?)\s+(.+)$/i);
+  if (costEstimatedMatch) {
+    return {
+      value: costEstimatedMatch[3],
+      label: costEstimatedMatch[4].trim(), // frequency as label
+      sublabel: `${costEstimatedMatch[1].trim()} ${costEstimatedMatch[2].trim()}`.substring(0, 40),
+      icon: icons[index % icons.length]
+    };
+  }
+
+  // Pattern 3: "[Subject] cost $value and [consequence]"
+  // Example: "Enterprise ERP systems cost $10K+ and are too complex"
+  const costAndMatch = text.match(/^(.+?)\s+(?:cost|costs)\s+(\$?[\d.,]+[BMK%]?\+?)\s+and\s+(.+)$/i);
+  if (costAndMatch) {
+    // Extract the core subject (remove trailing "systems" if present, capitalize)
+    let label = costAndMatch[1].trim();
+    label = label.replace(/\s+(?:systems?|solutions?|platforms?)$/i, '');
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+    return {
+      value: costAndMatch[2],
+      label: label,
+      sublabel: costAndMatch[3].trim().substring(0, 50),
+      icon: icons[index % icons.length]
+    };
+  }
+
+  // Pattern 4: "[Subject] cost $value [context]"
+  // Example: "College costs $50K per year on average"
+  const costSimpleMatch = text.match(/^(.+?)\s+(?:cost|costs)\s+(\$?[\d.,]+[BMK%]?\+?)\s+(.+)$/i);
+  if (costSimpleMatch) {
+    return {
+      value: costSimpleMatch[2],
+      label: costSimpleMatch[1].trim(),
+      sublabel: costSimpleMatch[3].trim(),
+      icon: icons[index % icons.length]
+    };
+  }
+
+  // Pattern 5: "$X billion/million - [description]"
+  // Example: "$45B - Total Addressable Market"
+  const moneyDashMatch = text.match(/^(\$?[\d.,]+[BM]?\+?)\s*-\s*(.+)$/);
+  if (moneyDashMatch) {
+    const { title, description } = splitTitleDescription(moneyDashMatch[2], 30);
+    return {
+      value: moneyDashMatch[1],
+      label: title || moneyDashMatch[2].substring(0, 30),
+      sublabel: description || '',
+      icon: icons[index % icons.length]
+    };
+  }
+
+  // Pattern 6: "[Number] in [N] [description]"
+  // Example: "1 in 3 children..."
+  const inMatch = text.match(/^(\d+)\s+in\s+(\d+)\s+(.+)$/i);
+  if (inMatch) {
+    const { title, description } = splitTitleDescription(inMatch[3], 30);
+    return {
+      value: `${inMatch[1]} in ${inMatch[2]}`,
+      label: title || inMatch[3].substring(0, 30),
+      sublabel: description || '',
+      icon: icons[index % icons.length]
+    };
+  }
+
+  // Fallback: Try to find any number/percentage/value and use it
+  const anyValueMatch = text.match(/(\$?[\d.,]+[BMK%]?\+?)/);
+  if (anyValueMatch) {
+    const value = anyValueMatch[1];
+    const remaining = text.replace(value, '').trim();
+    const { title, description } = splitTitleDescription(remaining, 35);
+    return {
+      value: value,
+      label: title || remaining.substring(0, 35),
+      sublabel: description || '',
+      icon: icons[index % icons.length]
+    };
+  }
+
+  // Last resort: split by character limit
   const { title, description } = splitTitleDescription(text, 35);
   return {
     value: '',
@@ -208,7 +316,7 @@ export function mapProblemSlide(slide: PitchSlide) {
 
   return {
     title: slide.title,
-    subtitle: slide.title,
+    // Don't override subtitle - let the component use its default
     description,
     stats,
   };
@@ -230,7 +338,7 @@ export function mapSolutionSlide(slide: PitchSlide) {
 
   return {
     title: slide.title,
-    subtitle: slide.title,
+    // Don't override subtitle - let the component use its default
     description: (content.solution as string) ||
                  (content.description as string) ||
                  Object.values(content).find(v => typeof v === 'string') as string || '',

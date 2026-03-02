@@ -228,17 +228,15 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
               )}
             </div>
           </div>
-          {!useDemoSlides && (
-            <Button
-              variant={useStyledView ? "default" : "outline"}
-              size="sm"
-              onClick={onToggleStyledView}
-              className="flex items-center gap-2"
-            >
-              <Sparkles className="h-4 w-4" />
-              {useStyledView ? "Styled View" : "Simple View"}
-            </Button>
-          )}
+          <Button
+            variant={useStyledView ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleStyledView}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            {useStyledView ? "Styled View" : "Simple View"}
+          </Button>
         </div>
       </div>
 
@@ -271,21 +269,15 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
         {/* Render slide content based on mode */}
         <div className="flex justify-center">
           <div className="border-2 border-gray-300 rounded-lg overflow-hidden shadow-lg relative" style={{ width: '100%', height: '720px' }}>
-            {useDemoSlides ? (
-              // Demo mode: Use static slide components
-              (() => {
-                const CurrentSlideComponent = slideComponents[currentSlideIndex] || Slide1;
-                return <CurrentSlideComponent />;
-              })()
-            ) : useStyledView ? (
-              // Normal mode with styled view: Map AI data to styled components
+            {useStyledView ? (
+              // Styled view: Map data to styled components (works for both demo and AI-generated data)
               (() => {
                 const CurrentSlideComponent = slideComponents[currentSlideIndex] || Slide1;
                 const styledProps = mapSlideByIndexToStyledProps(pitchDeck.slides[currentSlideIndex], currentSlideIndex, pitchDeck);
                 return styledProps ? <CurrentSlideComponent {...styledProps} /> : <CurrentSlideComponent />;
               })()
             ) : (
-              // Normal mode: Simple dynamic rendering from pitchDeck
+              // Simple view: Show raw data from pitchDeck
               <div className="absolute inset-0 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-10 flex flex-col">
                 <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
                   <div className="mb-3">
@@ -503,11 +495,12 @@ export default function PitchPage() {
       setPitchDeck(DEMO_PITCH_DECK);
       setHasGenerated(true);
       setUseDemoSlides(true); // Enable static demo slides
+      setUseStyledView(true); // Enable styled view by default for demo mode
       savePitchDeck(DEMO_PITCH_DECK);
       addMessage({
         id: Date.now().toString(),
         role: "assistant",
-        content: `✓ Loaded demo pitch deck "${DEMO_PITCH_DECK.title}" with ${DEMO_PITCH_DECK.slides.length} slides.`,
+        content: `✓ Loaded demo pitch deck "${DEMO_PITCH_DECK.title}" with ${DEMO_PITCH_DECK.slides.length} slides in styled view.`,
         timestamp: Date.now(),
       });
     },
