@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSession, setStep, savePitchDeck, getConversationHistory, saveConversationHistory, clearSession } from "@/lib/session";
 import { exportSessionToPDF } from "@/lib/export-pdf";
 import { DEMO_PITCH_DECK } from "@/lib/demo-data";
+import { mapSlideByIndexToStyledProps } from "@/lib/pitch-slide-mapping";
 import type { PitchDeck, Challenge, MarketAnalysis, BusinessIdea, DetailedIdeaMetrics, ChatMessage } from "@/types/innovation";
 import { PhaseLayout } from "@/components/wizard";
 import { PhaseChat } from "@/components/chat";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Download, ChevronLeft, ChevronRight, Sparkles, RefreshCw, Presentation, ChevronDown, ChevronUp, Target, TrendingUp, Lightbulb as IdeaIcon, DollarSign } from "lucide-react";
+import { Slide1, Slide2, Slide3, Slide4, Slide5, Slide6, Slide7 } from "@/components/pitch";
 
 // Collapsible Review Summary Component
 interface CollapsibleReviewSummaryProps {
@@ -187,9 +189,29 @@ interface SlideViewerProps {
   onPreviousSlide: () => void;
   onNextSlide: () => void;
   onSelectSlide: (index: number) => void;
+  useDemoSlides: boolean; // New prop to indicate demo mode
+  useStyledView: boolean; // New prop to toggle between styled and simple view
+  onToggleStyledView: () => void; // New prop to handle toggle
 }
 
-function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlide, onSelectSlide }: SlideViewerProps) {
+// Map slide index to slide component (for demo mode and styled view)
+// Note: Slide5 and Slide6 are swapped to match AI-generated data order
+// Slide5 = Competitive Landscape, Slide6 = Business Model
+const slideComponents = [
+  Slide1,
+  Slide2,
+  Slide3,
+  Slide4,
+  Slide6, // Index 4: Business Model
+  Slide5, // Index 5: Competitive Landscape
+  Slide7,
+];
+
+function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlide, onSelectSlide, useDemoSlides, useStyledView, onToggleStyledView }: SlideViewerProps) {
+  // Determine slide count and display based on mode
+  const slideCount = useDemoSlides ? slideComponents.length : pitchDeck.slides.length;
+  const isLastSlide = currentSlideIndex === slideCount - 1;
+
   return (
     <div className="px-6 py-6">
       <div className="mb-6">
@@ -197,10 +219,24 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
           <div className="h-10 w-10 rounded-md bg-gradient-to-br from-slate-700 to-slate-800 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center border border-slate-600 dark:border-slate-500">
             <Presentation className="h-5 w-5 text-slate-100" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{pitchDeck.title}</h1>
             <p className="text-sm text-slate-600 dark:text-slate-400">{pitchDeck.tagline}</p>
+            <div className="flex items-center gap-2 mt-1">
+              {useDemoSlides && (
+                <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">Demo Mode</span>
+              )}
+            </div>
           </div>
+          <Button
+            variant={useStyledView ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleStyledView}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            {useStyledView ? "Styled View" : "Simple View"}
+          </Button>
         </div>
       </div>
 
@@ -217,22 +253,31 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium text-slate-600 dark:text-slate-400 min-w-[80px] text-center">
-            Slide {currentSlideIndex + 1} of {pitchDeck.slides.length}
+            Slide {currentSlideIndex + 1} of {slideCount}
           </span>
           <Button
             variant="outline"
             size="sm"
             onClick={onNextSlide}
-            disabled={currentSlideIndex === pitchDeck.slides.length - 1}
+            disabled={isLastSlide}
             className="h-8 w-8 p-0"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
 
-        <Card className="overflow-hidden shadow-lg">
-          <CardContent className="p-0">
-            <div className="aspect-video relative">
+        {/* Render slide content based on mode */}
+        <div className="flex justify-center">
+          <div className="border-2 border-gray-300 rounded-lg overflow-hidden shadow-lg relative" style={{ width: '100%', height: '720px' }}>
+            {useStyledView ? (
+              // Styled view: Map data to styled components (works for both demo and AI-generated data)
+              (() => {
+                const CurrentSlideComponent = slideComponents[currentSlideIndex] || Slide1;
+                const styledProps = mapSlideByIndexToStyledProps(pitchDeck.slides[currentSlideIndex], currentSlideIndex, pitchDeck);
+                return styledProps ? <CurrentSlideComponent {...styledProps} /> : <CurrentSlideComponent title={pitchDeck.slides[currentSlideIndex].title || "Untitled"} />;
+              })()
+            ) : (
+              // Simple view: Show raw data from pitchDeck
               <div className="absolute inset-0 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-10 flex flex-col">
                 <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
                   <div className="mb-3">
@@ -272,9 +317,9 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Slide Thumbnails Navigation */}
@@ -284,36 +329,68 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
           <span className="text-xs text-slate-500 dark:text-slate-400">Click to jump to slide</span>
         </div>
         <div className="flex gap-3 overflow-x-auto py-8 px-2 items-center">
-          {pitchDeck.slides.map((slide, index) => (
-            <button
-              key={slide.id}
-              onClick={() => onSelectSlide(index)}
-              className={`flex-shrink-0 rounded-lg border-2 snap-start transition-all duration-200 origin-center ${
-                index === currentSlideIndex
-                  ? "w-36 h-28 border-slate-800 dark:border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 shadow-lg scale-110 z-10"
-                  : "w-36 h-28 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 opacity-70 hover:opacity-100 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:scale-105"
-              } flex flex-col p-2.5 pt-1.5 text-left relative`}
-            >
-              <div className={`absolute top-1.5 right-1.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold z-10 ${
-                index === currentSlideIndex
-                  ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900"
-                  : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-              }`}>
-                {index + 1}
-              </div>
-              <div className="flex-1 flex flex-col justify-center py-1">
-                <span
-                  className="text-slate-900 dark:text-slate-100 text-xs font-semibold block line-clamp-2 leading-tight"
-                  title={slide.title}
-                >
-                  {slide.title}
-                </span>
-                <span className="text-slate-500 dark:text-slate-400 text-[9px] uppercase tracking-wide font-medium mt-1">
-                  {slide.type}
-                </span>
-              </div>
-            </button>
-          ))}
+          {useDemoSlides ? (
+            // Demo mode: Show static slide thumbnails
+            slideComponents.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => onSelectSlide(index)}
+                className={`flex-shrink-0 rounded-lg border-2 snap-start transition-all duration-200 origin-center ${
+                  index === currentSlideIndex
+                    ? "w-36 h-28 border-slate-800 dark:border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 shadow-lg scale-110 z-10"
+                    : "w-36 h-28 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 opacity-70 hover:opacity-100 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:scale-105"
+                } flex flex-col p-2.5 pt-1.5 text-left relative`}
+              >
+                <div className={`absolute top-1.5 right-1.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold z-10 ${
+                  index === currentSlideIndex
+                    ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900"
+                    : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                }`}>
+                  {index + 1}
+                </div>
+                <div className="flex-1 flex flex-col justify-center py-1">
+                  <span className="text-slate-900 dark:text-slate-100 text-xs font-semibold block line-clamp-2 leading-tight">
+                    Slide {index + 1}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400 text-[9px] uppercase tracking-wide font-medium mt-1">
+                    Demo Slide
+                  </span>
+                </div>
+              </button>
+            ))
+          ) : (
+            // Normal mode: Show dynamic pitch deck slides
+            pitchDeck.slides.map((slide, index) => (
+              <button
+                key={slide.id}
+                onClick={() => onSelectSlide(index)}
+                className={`flex-shrink-0 rounded-lg border-2 snap-start transition-all duration-200 origin-center ${
+                  index === currentSlideIndex
+                    ? "w-36 h-28 border-slate-800 dark:border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 shadow-lg scale-110 z-10"
+                    : "w-36 h-28 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 opacity-70 hover:opacity-100 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 hover:scale-105"
+                } flex flex-col p-2.5 pt-1.5 text-left relative`}
+              >
+                <div className={`absolute top-1.5 right-1.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold z-10 ${
+                  index === currentSlideIndex
+                    ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900"
+                    : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                }`}>
+                  {index + 1}
+                </div>
+                <div className="flex-1 flex flex-col justify-center py-1">
+                  <span
+                    className="text-slate-900 dark:text-slate-100 text-xs font-semibold block line-clamp-2 leading-tight"
+                    title={slide.title}
+                  >
+                    {slide.title}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400 text-[9px] uppercase tracking-wide font-medium mt-1">
+                    {slide.type}
+                  </span>
+                </div>
+              </button>
+            ))
+          )}
         </div>
       </div>
 
@@ -325,7 +402,7 @@ function SlideViewer({ pitchDeck, currentSlideIndex, onPreviousSlide, onNextSlid
                 <Presentation className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">{pitchDeck.slides.length} Slides</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">{useDemoSlides ? slideComponents.length : pitchDeck.slides.length} Slides</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400">Ready to present</p>
               </div>
             </div>
@@ -394,6 +471,8 @@ export default function PitchPage() {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [isReviewSummaryExpanded, setIsReviewSummaryExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [useDemoSlides, setUseDemoSlides] = useState(false); // Track if using static demo slides
+  const [useStyledView, setUseStyledView] = useState(false); // Track if using styled view for AI-generated content
 
   // Use shared phase state hook
   const {
@@ -415,11 +494,13 @@ export default function PitchPage() {
     onDemoFill: (setPhaseData, addMessage) => {
       setPitchDeck(DEMO_PITCH_DECK);
       setHasGenerated(true);
+      setUseDemoSlides(true); // Enable static demo slides
+      setUseStyledView(true); // Enable styled view by default for demo mode
       savePitchDeck(DEMO_PITCH_DECK);
       addMessage({
         id: Date.now().toString(),
         role: "assistant",
-        content: `✓ Loaded demo pitch deck "${DEMO_PITCH_DECK.title}" with ${DEMO_PITCH_DECK.slides.length} slides.`,
+        content: `✓ Loaded demo pitch deck "${DEMO_PITCH_DECK.title}" with ${DEMO_PITCH_DECK.slides.length} slides in styled view.`,
         timestamp: Date.now(),
       });
     },
@@ -592,6 +673,7 @@ export default function PitchPage() {
                 if (data.type === "pitch_deck" && data.data) {
                   setPitchDeck(data.data);
                   setHasGenerated(true);
+                  setUseDemoSlides(false); // Disable demo slides for manual generation
                   savePitchDeck(data.data);
 
                   const confirmationMsg = `I've generated your pitch deck "${data.data.title}" with ${data.data.slides.length} slides. You can navigate through slides on the right, download as PDF, or ask me to help refine specific content.`;
@@ -986,6 +1068,9 @@ export default function PitchPage() {
                 onPreviousSlide={previousSlide}
                 onNextSlide={nextSlide}
                 onSelectSlide={setCurrentSlideIndex}
+                useDemoSlides={useDemoSlides}
+                useStyledView={useStyledView}
+                onToggleStyledView={() => setUseStyledView(!useStyledView)}
               />
             )}
           </div>
