@@ -89,11 +89,11 @@ export const Slide7 = ({
             </div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-14 h-1 rounded-full" style={{ background: '#44B54B' }}></div>
-              <span className="text-lg font-medium" style={{ color: '#666' }}>
+              <span className="text-lg font-medium whitespace-nowrap" style={{ color: '#666' }}>
                 {fundingRange}
               </span>
             </div>
-            <p className="text-base font-light" style={{ color: '#999' }}>
+            <p className="text-base font-light whitespace-nowrap" style={{ color: '#999' }}>
               {runway}
             </p>
           </div>
@@ -114,10 +114,10 @@ export const Slide7 = ({
                     {item.icon || FUNDING_ICONS[idx % FUNDING_ICONS.length]}
                   </i>
                   <div>
-                    <p className="text-base font-medium" style={{ color: '#333' }}>
+                    <p className="text-base font-medium whitespace-nowrap" style={{ color: '#333' }}>
                       {item.title}
                     </p>
-                    <p className="text-sm font-light" style={{ color: '#999' }}>
+                    <p className="text-sm font-light whitespace-nowrap" style={{ color: '#999' }}>
                       {item.description}
                     </p>
                   </div>

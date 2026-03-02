@@ -80,23 +80,23 @@ export const Slide2 = ({
                     {stat.value}
                   </div>
                   <div className="w-14 h-1 mb-3 rounded-full" style={{ background: '#44B54B' }}></div>
-                  <p className="text-base font-medium" style={{ color: '#333' }}>
+                  <p className="text-base font-medium whitespace-nowrap" style={{ color: '#333' }}>
                     {stat.label}
                   </p>
                   {stat.sublabel && (
-                    <p className="text-sm font-light mt-1" style={{ color: '#999' }}>
+                    <p className="text-sm font-light mt-1 whitespace-nowrap" style={{ color: '#999' }}>
                       {stat.sublabel}
                     </p>
                   )}
                 </>
               ) : (
                 <>
-                  <p className="text-lg font-semibold mb-3" style={{ color: '#333', lineHeight: 1.2 }}>
+                  <p className="text-lg font-semibold mb-3 whitespace-nowrap" style={{ color: '#333', lineHeight: 1.2 }}>
                     {stat.label}
                   </p>
                   <div className="w-14 h-1 mb-3 rounded-full" style={{ background: '#44B54B' }}></div>
                   {stat.sublabel && (
-                    <p className="text-sm font-light mt-1" style={{ color: '#999' }}>
+                    <p className="text-sm font-light mt-1 whitespace-nowrap" style={{ color: '#999' }}>
                       {stat.sublabel}
                     </p>
                   )}
