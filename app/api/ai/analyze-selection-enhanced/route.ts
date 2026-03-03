@@ -317,9 +317,9 @@ If this is a follow-up, answer the user's question based on the conversation his
             });
           }
 
-          // Stream with thinking enabled
+          // Stream with thinking disabled for faster responses
           for await (const chunk of streamClaudeWithThinking(apiMessages, systemPrompt, {
-            thinking: true,
+            thinking: false,
             webSearch: false, // We handle web search via MCP client
           })) {
             if (chunk.type === "thinking") {
