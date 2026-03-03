@@ -46,7 +46,7 @@ Provide your analysis of this text selection.`;
           };
 
           for await (const chunk of streamClaudeWithThinking(messages, systemPrompt, {
-            thinking: true,
+            thinking: false,
           })) {
             if (chunk.type === "thinking") {
               sendEvent({ type: "thinking", content: chunk.text });
